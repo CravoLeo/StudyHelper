@@ -74,7 +74,16 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const currentUses = currentUsage?.uses_remaining || 0
 
     // Update user usage based on plan type - ADD to existing uses
-    if (planType === 'starter') {
+    if (planType === 'individual') {
+      // Individual purchases just add uses, don't change plan type
+      const newUses = currentUses + PRICING_PLANS.individual.uses
+      // Keep existing plan_type - don't change it for individual purchases
+      await updateUserUsage(userId, {
+        uses_remaining: newUses
+      })
+      console.log(`✅ Added ${PRICING_PLANS.individual.uses} uses to existing ${currentUses} = ${newUses} total`)
+    } else if (planType === 'starter') {
+      // Starter is a one-time purchase - add uses
       const newUses = currentUses + PRICING_PLANS.starter.uses
       await updateUserUsage(userId, {
         uses_remaining: newUses,
@@ -137,7 +146,15 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     const currentUses = currentUsage?.uses_remaining || 0
 
     // Update user usage based on plan type - ADD to existing uses
-    if (planType === 'starter') {
+    if (planType === 'individual') {
+      // Individual purchases just add uses, don't change plan type
+      const newUses = currentUses + PRICING_PLANS.individual.uses
+      await updateUserUsage(userId, {
+        uses_remaining: newUses
+      })
+      console.log(`✅ Added ${PRICING_PLANS.individual.uses} uses to existing ${currentUses} = ${newUses} total`)
+    } else if (planType === 'starter') {
+      // Starter is a one-time purchase - add uses
       const newUses = currentUses + PRICING_PLANS.starter.uses
       await updateUserUsage(userId, {
         uses_remaining: newUses,
@@ -183,18 +200,27 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       return
     }
 
-    // Set unlimited plan for 30 days
+    // Get subscription to determine plan type
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const priceId = subscription.items.data[0]?.price.id
+
+    // Set expiration date for 30 days
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 30)
 
-    await updateUserUsage(userId, {
-      uses_remaining: -1, // Unlimited
-      plan_type: 'unlimited',
-      plan_expires_at: expiresAt.toISOString(),
-      stripe_subscription_id: subscriptionId
-    })
-
-    console.log(`Updated usage for user ${userId} with unlimited plan until ${expiresAt}`)
+    // Only handle unlimited subscriptions (starter is now one-time purchase)
+    if (priceId === process.env.STRIPE_UNLIMITED_PRICE_ID) {
+      // Unlimited subscription
+      await updateUserUsage(userId, {
+        uses_remaining: -1, // Unlimited
+        plan_type: 'unlimited',
+        plan_expires_at: expiresAt.toISOString(),
+        stripe_subscription_id: subscriptionId
+      })
+      console.log(`Updated usage for user ${userId} with unlimited plan until ${expiresAt}`)
+    } else {
+      console.error(`Unknown subscription price ID: ${priceId}`)
+    }
 
   } catch (error) {
     console.error('Error handling invoice payment succeeded:', error)

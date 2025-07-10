@@ -466,9 +466,11 @@ export default function Home() {
                     ? 'Unlimited' 
                     : `${userUsage.uses_remaining} uses`}
                 </span>
-                <span className="text-xs text-gray-400 capitalize">
-                  ({userUsage.plan_type})
-                </span>
+                {userUsage.plan_type === 'unlimited' && (
+                  <span className="text-xs text-purple-400">
+                    (Unlimited Plan)
+                  </span>
+                )}
               </div>
               
               {userUsage.plan_type !== 'unlimited' && (
@@ -483,27 +485,17 @@ export default function Home() {
             </div>
           )}
           
-          <button 
-            onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
-            className="hover:text-white transition-colors"
-          >
-            Reviews
-          </button>
+
         </div>
         
         {/* Auth Buttons */}
         <div className="flex items-center gap-3">
           {isSignedIn ? (
             <div className="flex items-center gap-3">
-              {userUsage && (
+              {userUsage && userUsage.plan_type === 'unlimited' && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm border border-gray-700">
-                  <span className={`font-medium capitalize ${
-                    userUsage.plan_type === 'unlimited' ? 'text-purple-400' :
-                    userUsage.plan_type === 'pro' ? 'text-yellow-400' :
-                    userUsage.plan_type === 'starter' ? 'text-blue-400' :
-                    'text-gray-300'
-                  }`}>
-                    {userUsage.plan_type} Plan
+                  <span className="font-medium text-purple-400">
+                    Unlimited Plan
                   </span>
                 </div>
               )}
@@ -571,7 +563,7 @@ export default function Home() {
           <br />
           <span className="text-green-400">Study Materials</span>
           <br />
-          100% Automatic & Free
+          100% Automatic & Secure
         </h1>
         
         {/* Subheadline */}
@@ -729,77 +721,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Reviews Section - More compact */}
-      {currentStep === 'upload' && (
-        <div id="reviews" className="max-w-5xl mx-auto px-6 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-white mb-3">What students are saying</h2>
-            <p className="text-gray-400">Join thousands of students studying smarter</p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
-              <div className="flex items-center gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-3 h-3 bg-green-500 rounded-full"></div>
-                ))}
-              </div>
-              <p className="text-gray-300 text-sm mb-4">
-                "This app saved me hours of studying! The AI-generated questions are spot-on and helped me ace my finals."
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                  <User size={16} className="text-green-400" />
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">Sarah Chen</p>
-                  <p className="text-gray-500 text-xs">Computer Science, MIT</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
-              <div className="flex items-center gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-3 h-3 bg-green-500 rounded-full"></div>
-                ))}
-              </div>
-              <p className="text-gray-300 text-sm mb-4">
-                "Perfect for processing research papers. The summaries are accurate and help me understand complex topics."
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                  <User size={16} className="text-green-400" />
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">Marcus Johnson</p>
-                  <p className="text-gray-500 text-xs">Biology PhD, Stanford</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
-              <div className="flex items-center gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-3 h-3 bg-green-500 rounded-full"></div>
-                ))}
-              </div>
-              <p className="text-gray-300 text-sm mb-4">
-                "Game changer for my study group! We use it to create practice questions from our textbooks."
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                  <User size={16} className="text-green-400" />
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">Emily Rodriguez</p>
-                  <p className="text-gray-500 text-xs">Pre-Med, UCLA</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content Area */}
       <div className="max-w-5xl mx-auto px-6 pb-12">

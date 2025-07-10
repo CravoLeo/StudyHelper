@@ -5,7 +5,7 @@ export interface UserUsage {
   id: string
   user_id: string
   uses_remaining: number
-  plan_type: 'free' | 'starter' | 'pro' | 'unlimited'
+  plan_type: 'free' | 'individual' | 'starter' | 'pro' | 'unlimited'
   plan_expires_at: string | null
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
@@ -20,6 +20,12 @@ export const PRICING_PLANS = {
     uses: 3,
     price: 0,
     description: '3 free uses to try the app'
+  },
+  individual: {
+    name: 'Individual Uses',
+    uses: 3,
+    price: 1,
+    description: '3 uses for just $1'
   },
   starter: {
     name: 'Starter Pack',

@@ -102,8 +102,8 @@ export default function Dashboard() {
 
             <div className="bg-gray-900/50 rounded-lg p-4 mb-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-white capitalize">
-                  {usage?.plan_type || 'Free'} Plan
+                <span className="text-2xl font-bold text-white">
+                  {isUnlimited ? 'Unlimited Plan' : 'Usage Credits'}
                 </span>
                 {isUnlimited && (
                   <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
@@ -111,7 +111,9 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <p className="text-gray-400 mb-4">{currentPlan.description}</p>
+              <p className="text-gray-400 mb-4">
+                {isUnlimited ? currentPlan.description : 'Purchase usage credits to continue using the app'}
+              </p>
 
               {/* Usage Display */}
               <div className="space-y-2">
@@ -156,7 +158,7 @@ export default function Dashboard() {
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <CreditCard size={20} />
-                {usage?.plan_type === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+                {isUnlimited ? 'Manage Plan' : 'Buy Credits'}
               </button>
               <button
                 onClick={() => window.location.href = '/'}

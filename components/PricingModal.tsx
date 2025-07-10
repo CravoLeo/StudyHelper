@@ -20,17 +20,18 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
 
   if (!isOpen) return null
 
-  const handleUpgrade = async (planType: 'starter' | 'pro' | 'unlimited') => {
+  const handleUpgrade = async (planType: 'individual' | 'starter' | 'pro' | 'unlimited') => {
     setLoading(planType)
     
     try {
       if (planType === 'unlimited') {
-        // Handle subscription
+        // Handle subscription (only unlimited is a subscription)
         const response = await fetch('/api/create-subscription', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ planType }),
         })
 
         const { sessionId, url } = await response.json()
@@ -55,7 +56,7 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           alert('Payment failed: ' + error.message)
         }
       } else {
-        // Handle one-time payment
+        // Handle one-time payment (individual, starter, and pro plans)
         const response = await fetch('/api/create-payment-intent', {
           method: 'POST',
           headers: {
@@ -109,20 +110,27 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
 
         {currentUsage && (
           <div className="mb-8 p-4 bg-gray-800/50 rounded-lg">
-            <p className="text-white font-medium">
-              Current Plan: <span className="text-green-400 capitalize">{currentUsage.plan_type}</span>
-            </p>
-            <p className="text-gray-400">
-              {currentUsage.uses_remaining === -1 
-                ? 'Unlimited uses remaining' 
-                : `${currentUsage.uses_remaining} uses remaining`}
-            </p>
+            {currentUsage.plan_type === 'unlimited' ? (
+              <>
+                <p className="text-white font-medium">
+                  Current Plan: <span className="text-purple-400">Unlimited Plan</span>
+                </p>
+                <p className="text-gray-400">Unlimited uses remaining</p>
+              </>
+            ) : (
+              <>
+                <p className="text-white font-medium">Current Usage Credits</p>
+                <p className="text-gray-400">
+                  {currentUsage.uses_remaining} uses remaining
+                </p>
+              </>
+            )}
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Starter Plan */}
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+          <div className="bg-gray-800/50 rounded-xl p-6 border border-blue-500/50">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
                 <Zap className="text-blue-400" size={20} />
@@ -145,7 +153,7 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
             <ul className="space-y-2 mb-6">
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                Perfect for occasional users
+                Perfect for regular users
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
@@ -155,6 +163,10 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
                 <Check size={16} className="text-green-400" />
                 AI-powered summaries
               </li>
+              <li className="flex items-center gap-2 text-gray-300">
+                <Check size={16} className="text-green-400" />
+                Great value for money
+              </li>
             </ul>
 
             <button
@@ -162,7 +174,7 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
               disabled={loading === 'starter'}
               className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
             >
-              {loading === 'starter' ? 'Processing...' : 'Upgrade Now'}
+              {loading === 'starter' ? 'Processing...' : 'Buy Now'}
             </button>
           </div>
 
@@ -257,6 +269,36 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
               className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
             >
               {loading === 'unlimited' ? 'Processing...' : 'Subscribe Now'}
+            </button>
+          </div>
+        </div>
+
+        {/* OR Section - Individual Usage */}
+        <div className="mt-8 text-center">
+          <div className="flex items-center justify-center mb-4">
+            <div className="flex-1 border-t border-gray-600"></div>
+            <span className="px-4 text-gray-400 text-sm font-medium">OR</span>
+            <div className="flex-1 border-t border-gray-600"></div>
+          </div>
+          
+          <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                <Zap className="text-green-400" size={16} />
+              </div>
+              <h3 className="text-lg font-bold text-white">Buy Individual Uses</h3>
+            </div>
+            
+            <p className="text-gray-400 text-sm mb-4">
+              Need just a few uses? Get {PRICING_PLANS.individual.uses} uses for ${PRICING_PLANS.individual.price} - perfect for quick tasks!
+            </p>
+            
+            <button
+              onClick={() => handleUpgrade('individual')}
+              disabled={loading === 'individual'}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              {loading === 'individual' ? 'Processing...' : `Buy ${PRICING_PLANS.individual.uses} Uses - $${PRICING_PLANS.individual.price}`}
             </button>
           </div>
         </div>

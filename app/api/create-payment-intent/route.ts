@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const { planType } = await request.json()
 
     // Validate plan type
-    if (!planType || !['starter', 'pro'].includes(planType)) {
+    if (!planType || !['individual', 'starter', 'pro'].includes(planType)) {
       return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
     }
 

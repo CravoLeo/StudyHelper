@@ -3,7 +3,7 @@ import { loadStripe } from '@stripe/stripe-js'
 
 // Server-side Stripe instance
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia'
+  apiVersion: '2025-06-30.basil'
 })
 
 // Client-side Stripe instance
@@ -13,7 +13,8 @@ export const getStripe = () => {
 
 // Product IDs for different plans (you'll need to create these in Stripe Dashboard)
 export const STRIPE_PRICE_IDS = {
-  starter: process.env.STRIPE_STARTER_PRICE_ID!,
+  individual: process.env.STRIPE_INDIVIDUAL_PRICE_ID!,
+  starter: process.env.STRIPE_STARTER_PRICE_ID!, // Now a subscription
   pro: process.env.STRIPE_PRO_PRICE_ID!,
   unlimited: process.env.STRIPE_UNLIMITED_PRICE_ID!
 } as const

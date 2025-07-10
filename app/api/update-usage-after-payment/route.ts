@@ -49,7 +49,15 @@ export async function POST(request: NextRequest) {
     const currentUses = currentUsage?.uses_remaining || 0
 
     // Update user usage based on plan type - ADD to existing uses
-    if (planType === 'starter') {
+    if (planType === 'individual') {
+      // Individual purchases just add uses, don't change plan type
+      const newUses = currentUses + PRICING_PLANS.individual.uses
+      await updateUserUsage(userId, {
+        uses_remaining: newUses
+      })
+      console.log(`✅ Added ${PRICING_PLANS.individual.uses} uses to existing ${currentUses} = ${newUses} total`)
+    } else if (planType === 'starter') {
+      // Starter is a one-time purchase - add uses
       const newUses = currentUses + PRICING_PLANS.starter.uses
       await updateUserUsage(userId, {
         uses_remaining: newUses,
