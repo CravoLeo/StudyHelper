@@ -43,9 +43,22 @@ export default function Home() {
   useEffect(() => {
     const checkMaintenanceMode = async () => {
       try {
+        // In development (localhost), always disable maintenance mode
+        const isDevelopment = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' ||
+                            window.location.hostname === '0.0.0.0'
+        
+        if (isDevelopment) {
+          console.log('🔧 Development mode detected - bypassing maintenance mode')
+          setMaintenanceMode(false)
+          setMaintenanceChecked(true)
+          return
+        }
+
         const response = await fetch('/api/health-check')
         if (response.ok) {
           const status = await response.json()
+          console.log('🔍 Maintenance mode status:', status)
           setMaintenanceMode(status.maintenanceMode)
           setEnvStatus({
             supabaseUrl: status.supabaseUrl,
