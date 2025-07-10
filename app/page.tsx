@@ -534,7 +534,7 @@ export default function Home() {
 
       {/* Status Messages */}
       {isLocalMode && (
-        <div className="mx-6 mb-4 max-w-4xl mx-auto">
+        <div className="mb-4 max-w-4xl mx-auto px-6">
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
             <div className="flex items-center gap-2 text-sm">
               <AlertCircle className="h-4 w-4 text-yellow-400" />
@@ -545,7 +545,7 @@ export default function Home() {
       )}
 
       {!isLocalMode && (
-        <div className="mx-6 mb-4 max-w-4xl mx-auto">
+        <div className="mb-4 max-w-4xl mx-auto px-6">
           <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
             <div className="flex items-center gap-2 text-sm">
               <CheckCircle className="h-4 w-4 text-green-400" />
@@ -572,26 +572,34 @@ export default function Home() {
           No manual work required.
         </p>
 
-        {/* Demo Mode Toggle - Cleaner */}
+        {/* Mode Toggle */}
         <div className="flex justify-center mb-12">
-          <div className="bg-gray-900 rounded-lg p-3 border border-gray-700">
+          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
             <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-300">Demo Mode</span>
               <button
                 onClick={toggleDemoMode}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                  demoMode ? 'bg-green-500' : 'bg-gray-600'
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  demoMode ? 'bg-blue-500' : 'bg-green-500'
                 }`}
               >
                 <span
-                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                    demoMode ? 'translate-x-5' : 'translate-x-1'
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    demoMode ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
-              <span className="text-xs text-gray-500">
-                {demoMode ? 'Free sandbox' : 'Uses OpenAI API'}
-              </span>
+              <div className="flex flex-col">
+                <span className={`text-sm font-medium ${
+                  demoMode ? 'text-blue-300' : 'text-green-300'
+                }`}>
+                  {demoMode ? '🎭 DEMO MODE' : '🚀 OPENAI MODE'}
+                </span>
+                <span className={`text-xs ${
+                  demoMode ? 'text-blue-400' : 'text-green-400'
+                }`}>
+                  {demoMode ? 'Free • Uses mock data' : 'Uses credits • Real AI'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -619,7 +627,7 @@ export default function Home() {
           <div className="flex justify-center mb-12">
             <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
               <div className="flex items-center space-x-4">
-                                 <div className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all bg-green-500/20 text-green-300">
+                <div className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all bg-green-500/20 text-green-300">
                   <Upload size={16} />
                   <span className="text-sm font-medium">Upload</span>
                 </div>
@@ -732,6 +740,7 @@ export default function Home() {
               <TextExtraction 
                 file={uploadedFile} 
                 onTextExtracted={handleTextExtracted}
+                demoMode={demoMode}
               />
             </div>
           )}

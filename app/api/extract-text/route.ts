@@ -15,6 +15,11 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== File Upload Request Received ===')
     
+    // Get form data first to check demo mode
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const demoMode = formData.get('demoMode') === 'true'
+    
     // Check authentication
     const { userId } = await auth()
     
@@ -23,21 +28,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
     
-    // Check if user can make request (usage limits)
-    const { canMake, usage } = await canUserMakeRequest(userId)
-    
-    if (!canMake) {
-      console.log('❌ User has exceeded usage limits')
-      return NextResponse.json({ 
-        error: 'Usage limit exceeded. Please upgrade your plan to continue.',
-        usageInfo: usage 
-      }, { status: 403 })
+    // Check if user can make request (usage limits) - skip in demo mode
+    if (!demoMode) {
+      const { canMake, usage } = await canUserMakeRequest(userId)
+      
+      if (!canMake) {
+        console.log('❌ User has exceeded usage limits')
+        return NextResponse.json({ 
+          error: 'Usage limit exceeded. Please upgrade your plan to continue.',
+          usageInfo: usage 
+        }, { status: 403 })
+      }
+      
+      console.log('✅ User authentication and usage check passed')
+    } else {
+      console.log('🎭 Demo mode - skipping usage check')
     }
-    
-    console.log('✅ User authentication and usage check passed')
-    
-    const formData = await request.formData()
-    const file = formData.get('file') as File
 
     if (!file) {
       console.log('❌ No file provided in request')
@@ -48,7 +54,8 @@ export async function POST(request: NextRequest) {
       name: file.name,
       type: file.type,
       size: file.size,
-      lastModified: file.lastModified
+      lastModified: file.lastModified,
+      demoMode: demoMode
     })
 
     // Check file size limit (15MB)
@@ -169,9 +176,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Decrement user usage on successful extraction
-    await decrementUserUsage(userId)
-    console.log('✅ User usage decremented')
+    // Decrement user usage on successful extraction (skip in demo mode)
+    if (!demoMode) {
+      await decrementUserUsage(userId)
+      console.log('✅ User usage decremented')
+    } else {
+      console.log('🎭 Demo mode - no usage consumed')
+    }
 
     console.log('✅ Text extraction successful! Returning', extractedText.trim().length, 'characters')
     console.log('=== End of File Processing ===')

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import OpenAI from 'openai'
+import { canUserMakeRequest, decrementUserUsage } from '@/lib/database'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -7,6 +9,12 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth()
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
     const { text } = await request.json()
 
     if (!text) {
@@ -15,6 +23,24 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
+    }
+
+    // Check if user can make request and has enough credits
+    const { canMake, usage } = await canUserMakeRequest(userId)
+    
+    if (!canMake) {
+      return NextResponse.json({ 
+        error: 'Insufficient credits', 
+        usage_remaining: usage?.uses_remaining || 0 
+      }, { status: 403 })
+    }
+
+    console.log(`🔄 User ${userId} generating AI content (${usage?.uses_remaining} credits remaining)`)
+
+    // Decrement usage count before processing
+    const updatedUsage = await decrementUserUsage(userId)
+    if (updatedUsage) {
+      console.log(`✅ Usage decremented: ${updatedUsage.uses_remaining} credits remaining`)
     }
 
     // Calculate dynamic summary length based on content size (optimized for 15MB limit)
@@ -201,7 +227,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       summary: summary.trim(),
-      questions: finalQuestions
+      questions: finalQuestions,
+      usage_remaining: updatedUsage?.uses_remaining || 0
     })
 
   } catch (error) {

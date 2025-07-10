@@ -6,9 +6,10 @@ import { Loader2, FileText, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-rea
 interface TextExtractionProps {
   file: File
   onTextExtracted: (text: string) => void
+  demoMode?: boolean
 }
 
-export default function TextExtraction({ file, onTextExtracted }: TextExtractionProps) {
+export default function TextExtraction({ file, onTextExtracted, demoMode = false }: TextExtractionProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [extractedText, setExtractedText] = useState('')
   const [error, setError] = useState('')
@@ -28,6 +29,7 @@ export default function TextExtraction({ file, onTextExtracted }: TextExtraction
 
         const formData = new FormData()
         formData.append('file', file)
+        formData.append('demoMode', demoMode.toString())
 
         const response = await fetch('/api/extract-text', {
           method: 'POST',
@@ -51,10 +53,14 @@ export default function TextExtraction({ file, onTextExtracted }: TextExtraction
         setExtractedText(data.text || '')
         onTextExtracted(data.text || '')
         
-        // Refresh usage after successful extraction
-        const refreshEvent = new CustomEvent('refreshUsage')
-        window.dispatchEvent(refreshEvent)
-        console.log('🔄 Usage refresh event dispatched')
+        if (!demoMode) {
+          // Refresh usage after successful extraction (only in real mode)
+          const refreshEvent = new CustomEvent('refreshUsage')
+          window.dispatchEvent(refreshEvent)
+          console.log('🔄 Usage refresh event dispatched after text extraction')
+        } else {
+          console.log('🎭 Demo mode - no usage consumed for text extraction')
+        }
       } catch (err) {
         console.error('❌ Text extraction failed:', err)
         setError(err instanceof Error ? err.message : 'Failed to extract text')

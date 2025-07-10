@@ -121,10 +121,8 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           setTimeout(() => {
             onAIGenerated(mockSummary, mockQuestions)
             
-            // Refresh usage after successful generation (even in demo mode for consistency)
-            const refreshEvent = new CustomEvent('refreshUsage')
-            window.dispatchEvent(refreshEvent)
-            console.log('🔄 Usage refresh event dispatched after demo generation')
+            // No usage refresh in demo mode - sandbox doesn't consume credits
+            console.log('🎭 Demo mode completed - no usage consumed')
           }, 500)
           
         } else {
@@ -163,7 +161,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
             // Refresh usage after successful AI generation
             const refreshEvent = new CustomEvent('refreshUsage')
             window.dispatchEvent(refreshEvent)
-            console.log('🔄 Usage refresh event dispatched after AI generation')
+            console.log(`🔄 Usage refresh event dispatched after AI generation - ${data.usage_remaining} credits remaining`)
           }, 500)
         }
         
@@ -190,7 +188,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {demoMode ? '🎭 Demo Mode: Simulating AI analysis' : 'AI is analyzing your content'}
+              {demoMode ? '🎭 Free Sandbox: Simulating AI analysis' : 'AI is analyzing your content'}
             </h3>
             <p className="text-gray-400 text-lg">
               {demoMode ? 'Generating sample content...' : 'Creating summary and study questions...'}
@@ -238,7 +236,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           <div className="bg-red-500/10 backdrop-blur-sm rounded-xl p-4 border border-red-500/30">
             <p className="text-red-300 text-sm text-center">
               {demoMode 
-                ? 'Demo mode encountered an error. Please try again.' 
+                ? 'Free sandbox encountered an error. Please try again.' 
                 : 'Please check your OpenAI API key and try again.'
               }
             </p>
@@ -261,14 +259,14 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
                 AI analysis complete
               </h3>
               <p className="text-gray-400">
-                {demoMode ? 'Demo content generated' : 'Summary and questions generated successfully'}
+                {demoMode ? 'Sample content generated' : 'Summary and questions generated successfully'}
               </p>
             </div>
           </div>
           
           {demoMode && (
             <div className="bg-yellow-500/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-yellow-500/30">
-              <span className="text-yellow-300 text-sm font-medium">🎭 Demo Mode</span>
+              <span className="text-yellow-300 text-sm font-medium">🎭 Free Sandbox</span>
             </div>
           )}
         </div>
@@ -298,7 +296,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
         </div>
         <div>
           <h3 className="text-2xl font-bold text-white">
-            {demoMode ? '🎭 Demo Content Generated' : 'AI Content Generated'}
+            {demoMode ? '🎭 Sample Content Generated' : 'AI Content Generated'}
           </h3>
           <p className="text-white/60 text-sm">Ready for editing and export</p>
         </div>
