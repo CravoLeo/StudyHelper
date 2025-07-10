@@ -20,6 +20,29 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
 
   if (!isOpen) return null
 
+  const handleManageSubscription = async () => {
+    try {
+      const response = await fetch('/api/create-customer-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create customer portal session')
+      }
+
+      // Redirect to Stripe customer portal
+      window.location.href = data.url
+    } catch (error) {
+      console.error('Error opening customer portal:', error)
+      alert('Failed to open subscription management. Please try again.')
+    }
+  }
+
   const handleUpgrade = async (planType: 'individual' | 'starter' | 'pro' | 'unlimited') => {
     setLoading(planType)
     
@@ -126,17 +149,27 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           <div className="mb-8 p-4 bg-gray-800/50 rounded-lg">
             {currentUsage.plan_type === 'unlimited' ? (
               <>
-            <p className="text-white font-medium">
-                  Current Plan: <span className="text-purple-400">Unlimited Plan</span>
-            </p>
-                <p className="text-gray-400">Unlimited uses remaining</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium">
+                      Current Plan: <span className="text-purple-400">Unlimited Plan</span>
+                    </p>
+                    <p className="text-gray-400">Unlimited uses remaining</p>
+                  </div>
+                  <button
+                    onClick={handleManageSubscription}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm"
+                  >
+                    Manage Subscription
+                  </button>
+                </div>
               </>
             ) : (
               <>
                 <p className="text-white font-medium">Current Usage Credits</p>
-            <p className="text-gray-400">
+                <p className="text-gray-400">
                   {currentUsage.uses_remaining} uses remaining
-            </p>
+                </p>
               </>
             )}
           </div>
