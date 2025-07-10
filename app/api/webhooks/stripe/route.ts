@@ -9,6 +9,14 @@ export async function POST(request: NextRequest) {
   console.log('🌐 Request headers:', Object.fromEntries(request.headers.entries()))
   
   try {
+    // Check if Stripe is properly configured
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
+      console.log('❌ Stripe not properly configured')
+      return NextResponse.json({ 
+        error: 'Webhook handler not configured' 
+      }, { status: 503 })
+    }
+
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
 

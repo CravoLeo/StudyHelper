@@ -8,6 +8,13 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is properly configured
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
+      return NextResponse.json({ 
+        error: 'Payment system is currently unavailable. Please try again later.' 
+      }, { status: 503 })
+    }
+
     const { userId } = await auth()
     
     if (!userId) {

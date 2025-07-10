@@ -1,8 +1,14 @@
 import Stripe from 'stripe'
 import { loadStripe } from '@stripe/stripe-js'
 
-// Server-side Stripe instance
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Server-side Stripe instance with safe initialization
+export const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_for_build',
+  {
+    // Remove apiVersion to avoid compatibility issues
+    typescript: true,
+  }
+)
 
 // Client-side Stripe instance
 export const getStripe = () => {
@@ -11,10 +17,10 @@ export const getStripe = () => {
 
 // Product IDs for different plans (you'll need to create these in Stripe Dashboard)
 export const STRIPE_PRICE_IDS = {
-  individual: process.env.STRIPE_INDIVIDUAL_PRICE_ID!,
-  starter: process.env.STRIPE_STARTER_PRICE_ID!, // Now a subscription
-  pro: process.env.STRIPE_PRO_PRICE_ID!,
-  unlimited: process.env.STRIPE_UNLIMITED_PRICE_ID!
+  individual: process.env.STRIPE_INDIVIDUAL_PRICE_ID || 'price_placeholder',
+  starter: process.env.STRIPE_STARTER_PRICE_ID || 'price_placeholder',
+  pro: process.env.STRIPE_PRO_PRICE_ID || 'price_placeholder',
+  unlimited: process.env.STRIPE_UNLIMITED_PRICE_ID || 'price_placeholder'
 } as const
 
 // Helper function to create or retrieve a Stripe customer
