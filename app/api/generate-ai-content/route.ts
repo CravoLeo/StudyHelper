@@ -3,10 +3,6 @@ import { auth } from '@clerk/nextjs/server'
 import OpenAI from 'openai'
 import { canUserMakeRequest, decrementUserUsage } from '@/lib/database'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -24,6 +20,11 @@ export async function POST(request: NextRequest) {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
     }
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
 
     // Check if user can make request and has enough credits
     const { canMake, usage } = await canUserMakeRequest(userId)
@@ -186,7 +187,7 @@ export async function POST(request: NextRequest) {
       console.log('Raw questions response:', questionsContent)
       
       // Try to extract questions from malformed JSON
-      const questionLines = questionsContent.split('\n').filter(line => 
+      const questionLines = questionsContent.split('\n').filter((line: string) => 
         line.trim().length > 10 && 
         (line.includes('?') || line.includes('What') || line.includes('How') || line.includes('Why'))
       )
@@ -194,8 +195,8 @@ export async function POST(request: NextRequest) {
       if (questionLines.length > 0) {
         const maxQuestions = questionCount.split('-')[1] || '8'
         questions = questionLines
-          .map(q => q.replace(/["\[\],]/g, '').trim())
-          .filter(q => q.length > 10)
+          .map((q: string) => q.replace(/["\[\],]/g, '').trim())
+          .filter((q: string) => q.length > 10)
           .slice(0, parseInt(maxQuestions))
       } else {
         // Last resort fallback - more specific than before
