@@ -26,7 +26,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [showDebug, setShowDebug] = useState(false)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
-  const [maintenanceChecked, setMaintenanceChecked] = useState(false)
+  const [maintenanceChecked, setMaintenanceChecked] = useState(true) // Start as true to avoid hydration issues
   const [envStatus, setEnvStatus] = useState({
     supabaseUrl: false,
     supabaseKey: false,
@@ -39,34 +39,18 @@ export default function Home() {
   const [showPricingModal, setShowPricingModal] = useState(false)
   const [usageLoading, setUsageLoading] = useState(false)
 
-  // Check maintenance mode from environment
+  // Simplified maintenance mode check - only run on client
   useEffect(() => {
+    // Only check maintenance mode, don't block rendering
     const checkMaintenanceMode = async () => {
-      console.log('🔄 Starting maintenance mode check...')
-      console.log('🌐 Current hostname:', window.location.hostname)
-      
       try {
-        // In development (localhost), always disable maintenance mode
-        const isDevelopment = window.location.hostname === 'localhost' || 
-                            window.location.hostname === '127.0.0.1' ||
-                            window.location.hostname === '0.0.0.0'
-        
-        console.log('🔧 Is development?', isDevelopment)
-        
-        if (isDevelopment) {
-          console.log('🔧 Development mode detected - bypassing maintenance mode')
-          setMaintenanceMode(false)
-          setMaintenanceChecked(true)
-          console.log('✅ Development bypass complete')
-          return
-        }
-
-        console.log('🌐 Production mode - checking API...')
         const response = await fetch('/api/health-check')
         if (response.ok) {
           const status = await response.json()
-          console.log('🔍 Maintenance mode status:', status)
-          setMaintenanceMode(status.maintenanceMode || false)
+          // Only set maintenance mode if explicitly true
+          if (status.maintenanceMode === true) {
+            setMaintenanceMode(true)
+          }
           setEnvStatus({
             supabaseUrl: status.supabaseUrl || false,
             supabaseKey: status.supabaseKey || false,
@@ -75,17 +59,13 @@ export default function Home() {
           })
         }
       } catch (error) {
-        console.error('❌ Error checking maintenance mode:', error)
-        // Default to false if API call fails
-        setMaintenanceMode(false)
-      } finally {
-        console.log('🏁 Maintenance mode check complete')
-        setMaintenanceChecked(true)
+        console.error('Error checking maintenance mode:', error)
+        // Silently fail, don't set maintenance mode
       }
     }
 
-    // Add a small delay to ensure hydration is complete
-    const timer = setTimeout(checkMaintenanceMode, 100)
+    // Run after a brief delay to ensure hydration is complete
+    const timer = setTimeout(checkMaintenanceMode, 500)
     return () => clearTimeout(timer)
   }, [])
 
@@ -458,25 +438,7 @@ export default function Home() {
     }
   }, [summary, questions, uploadedFile])
 
-  // Show loading while checking maintenance mode
-  if (!maintenanceChecked) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading StudyHelper...</h2>
-          <p className="text-gray-600 mb-4">Please wait while we prepare your experience.</p>
-          <div className="text-sm text-gray-500 bg-gray-50 rounded p-3">
-            <p className="font-mono">🔧 DEBUG: Checking maintenance mode...</p>
-            <p className="font-mono">🌐 Location: {typeof window !== 'undefined' ? window.location.hostname : 'server'}</p>
-            <p className="font-mono">📊 Status: {maintenanceChecked ? 'Checked' : 'Checking...'}</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Show maintenance mode if enabled
+  // Show maintenance mode if enabled (render inline to avoid hydration issues)
   if (maintenanceMode) {
     return <MaintenanceMode />
   }
