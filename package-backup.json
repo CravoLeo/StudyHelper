@@ -1,0 +1,37 @@
+{
+  "name": "study-helper-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.24.0",
+    "@supabase/supabase-js": "^2.50.4",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
+    "lucide-react": "^0.292.0",
+    "next": "14.2.25",
+    "openai": "^4.20.0",
+    "pdf-parse": "^1.1.1",
+    "postcss": "^8",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-dropzone": "^14.2.3",
+    "tailwindcss": "^3.3.0",
+    "tesseract.js": "^5.0.3",
+    "typescript": "^5"
+  },
+  "devDependencies": {
+    "@types/pdf-parse": "^1.1.4"
+  }
+} 
