@@ -9,11 +9,14 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     // Check if Stripe is properly configured
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
-      return NextResponse.json({ 
-        error: 'Payment system is currently unavailable. Please try again later.' 
-      }, { status: 503 })
-    }
+    // if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
+    //   return NextResponse.json({ 
+    //     error: 'Payment system is currently unavailable. Please try again later.' 
+    //   }, { status: 503 })
+    // }
+
+    console.log('🔍 Stripe Secret Key exists:', !!process.env.STRIPE_SECRET_KEY)
+    console.log('🔍 Stripe Secret Key starts with sk_live:', process.env.STRIPE_SECRET_KEY?.startsWith('sk_live'))
 
     const { userId } = await auth()
     
