@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { stripe } from '@/lib/stripe'
+import { stripe, STRIPE_PRICE_IDS } from '@/lib/stripe'
 import { PRICING_PLANS } from '@/lib/database'
 
 // Force dynamic rendering for this route
@@ -8,13 +8,6 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if Stripe is properly configured
-    // if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
-    //   return NextResponse.json({ 
-    //     error: 'Payment system is currently unavailable. Please try again later.' 
-    //   }, { status: 503 })
-    // }
-
     console.log('🔍 Stripe Secret Key exists:', !!process.env.STRIPE_SECRET_KEY)
     console.log('🔍 Stripe Secret Key starts with sk_live:', process.env.STRIPE_SECRET_KEY?.startsWith('sk_live'))
 
@@ -37,19 +30,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     }
 
-    // Create Checkout Session for simpler payment flow
+    // Get the price ID from environment variables
+    const priceId = STRIPE_PRICE_IDS[planType as keyof typeof STRIPE_PRICE_IDS]
+    
+    console.log('🔍 Using price ID:', priceId, 'for plan:', planType)
+
+    // Create Checkout Session using pre-created price IDs
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: plan.name,
-              description: plan.description,
-            },
-            unit_amount: plan.price * 100, // Convert to cents
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
