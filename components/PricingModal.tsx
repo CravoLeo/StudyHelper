@@ -22,6 +22,8 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
 
   const handleManageSubscription = async () => {
     try {
+      console.log('🔍 Opening customer portal...')
+      
       const response = await fetch('/api/create-customer-portal', {
         method: 'POST',
         headers: {
@@ -30,16 +32,20 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
       })
 
       const data = await response.json()
+      
+      console.log('🔍 Portal response:', { status: response.status, data })
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create customer portal session')
       }
 
+      console.log('✅ Redirecting to portal:', data.url)
+      
       // Redirect to Stripe customer portal
       window.location.href = data.url
     } catch (error) {
-      console.error('Error opening customer portal:', error)
-      alert('Failed to open subscription management. Please try again.')
+      console.error('❌ Error opening customer portal:', error)
+      alert(`Failed to open subscription management: ${error instanceof Error ? error.message : 'Please try again.'}`)
     }
   }
 
@@ -147,6 +153,11 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
 
         {currentUsage && (
           <div className="mb-8 p-4 bg-gray-800/50 rounded-lg">
+            {/* Debug info */}
+            <div className="mb-2 text-xs text-gray-500">
+              DEBUG: plan_type = "{currentUsage.plan_type}", uses = {currentUsage.uses_remaining}
+            </div>
+            
             {currentUsage.plan_type === 'unlimited' ? (
               <>
                 <div className="flex items-center justify-between">

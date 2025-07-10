@@ -90,6 +90,35 @@ export default function Home() {
     setCurrentStep('generate')
   }, [])
 
+  const handleManageSubscription = async () => {
+    try {
+      console.log('🔍 Opening customer portal...')
+      
+      const response = await fetch('/api/create-customer-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+      
+      console.log('🔍 Portal response:', { status: response.status, data })
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create customer portal session')
+      }
+
+      console.log('✅ Redirecting to portal:', data.url)
+      
+      // Redirect to Stripe customer portal
+      window.location.href = data.url
+    } catch (error) {
+      console.error('❌ Error opening customer portal:', error)
+      alert(`Failed to open subscription management: ${error instanceof Error ? error.message : 'Please try again.'}`)
+    }
+  }
+
   const handleAIGenerated = useCallback((generatedSummary: string, generatedQuestions: string[]) => {
     setSummary(generatedSummary)
     setQuestions(generatedQuestions)
@@ -498,7 +527,15 @@ export default function Home() {
                 )}
               </div>
               
-              {userUsage.plan_type !== 'unlimited' && (
+              {userUsage.plan_type === 'unlimited' ? (
+                <button 
+                  onClick={handleManageSubscription}
+                  className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Manage Plan
+                </button>
+              ) : (
                 <button 
                   onClick={() => setShowPricingModal(true)}
                   className="flex items-center gap-2 px-3 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium"

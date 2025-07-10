@@ -97,13 +97,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const currentUsage = await getUserUsage(userId)
     const currentUses = currentUsage?.uses_remaining || 0
 
+    // Store customer ID for all plan types
+    const customerId = session.customer as string
+    console.log(`💳 Storing customer ID: ${customerId} for user: ${userId}`)
+
     // Update user usage based on plan type - ADD to existing uses
     if (planType === 'individual') {
       // Individual purchases just add uses, don't change plan type
       const newUses = currentUses + PRICING_PLANS.individual.uses
       // Keep existing plan_type - don't change it for individual purchases
       await updateUserUsage(userId, {
-        uses_remaining: newUses
+        uses_remaining: newUses,
+        stripe_customer_id: customerId
       })
       console.log(`✅ Added ${PRICING_PLANS.individual.uses} uses to existing ${currentUses} = ${newUses} total`)
     } else if (planType === 'starter') {
@@ -111,14 +116,16 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       const newUses = currentUses + PRICING_PLANS.starter.uses
       await updateUserUsage(userId, {
         uses_remaining: newUses,
-        plan_type: 'starter'
+        plan_type: 'starter',
+        stripe_customer_id: customerId
       })
       console.log(`✅ Added ${PRICING_PLANS.starter.uses} uses to existing ${currentUses} = ${newUses} total`)
     } else if (planType === 'pro') {
       const newUses = currentUses + PRICING_PLANS.pro.uses
       await updateUserUsage(userId, {
         uses_remaining: newUses,
-        plan_type: 'pro'
+        plan_type: 'pro',
+        stripe_customer_id: customerId
       })
       console.log(`✅ Added ${PRICING_PLANS.pro.uses} uses to existing ${currentUses} = ${newUses} total`)
     } else if (planType === 'unlimited') {
@@ -130,7 +137,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         uses_remaining: -1, // Unlimited
         plan_type: 'unlimited',
         plan_expires_at: expiresAt.toISOString(),
-        stripe_subscription_id: session.subscription as string
+        stripe_subscription_id: session.subscription as string,
+        stripe_customer_id: customerId
       })
       console.log(`✅ Set unlimited plan until ${expiresAt}`)
     }
@@ -165,6 +173,8 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       return
     }
 
+    console.log(`💳 Storing customer ID: ${customerId} for user: ${userId}`)
+
     // Get current usage to add to existing uses
     const currentUsage = await getUserUsage(userId)
     const currentUses = currentUsage?.uses_remaining || 0
@@ -174,7 +184,8 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       // Individual purchases just add uses, don't change plan type
       const newUses = currentUses + PRICING_PLANS.individual.uses
       await updateUserUsage(userId, {
-        uses_remaining: newUses
+        uses_remaining: newUses,
+        stripe_customer_id: customerId
       })
       console.log(`✅ Added ${PRICING_PLANS.individual.uses} uses to existing ${currentUses} = ${newUses} total`)
     } else if (planType === 'starter') {
@@ -182,14 +193,16 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       const newUses = currentUses + PRICING_PLANS.starter.uses
       await updateUserUsage(userId, {
         uses_remaining: newUses,
-        plan_type: 'starter'
+        plan_type: 'starter',
+        stripe_customer_id: customerId
       })
       console.log(`✅ Added ${PRICING_PLANS.starter.uses} uses to existing ${currentUses} = ${newUses} total`)
     } else if (planType === 'pro') {
       const newUses = currentUses + PRICING_PLANS.pro.uses
       await updateUserUsage(userId, {
         uses_remaining: newUses,
-        plan_type: 'pro'
+        plan_type: 'pro',
+        stripe_customer_id: customerId
       })
       console.log(`✅ Added ${PRICING_PLANS.pro.uses} uses to existing ${currentUses} = ${newUses} total`)
     }
@@ -224,6 +237,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       return
     }
 
+    console.log(`💳 Storing customer ID: ${customerId} for user: ${userId}`)
+
     // Get subscription to determine plan type
     const subscription = await stripe.subscriptions.retrieve(subscriptionId)
     const priceId = subscription.items.data[0]?.price.id
@@ -239,7 +254,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
         uses_remaining: -1, // Unlimited
         plan_type: 'unlimited',
         plan_expires_at: expiresAt.toISOString(),
-        stripe_subscription_id: subscriptionId
+        stripe_subscription_id: subscriptionId,
+        stripe_customer_id: customerId
       })
       console.log(`Updated usage for user ${userId} with unlimited plan until ${expiresAt}`)
     } else {
