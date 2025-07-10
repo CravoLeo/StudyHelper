@@ -26,7 +26,7 @@ CREATE TABLE user_usage (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id TEXT NOT NULL UNIQUE,  -- Clerk user ID
   uses_remaining INTEGER NOT NULL DEFAULT 3,
-  plan_type TEXT NOT NULL DEFAULT 'free' CHECK (plan_type IN ('free', 'starter', 'pro', 'unlimited')),
+  plan_type TEXT NOT NULL DEFAULT 'free' CHECK (plan_type IN ('free', 'individual', 'starter', 'pro', 'unlimited')),
   plan_expires_at TIMESTAMP WITH TIME ZONE,
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
@@ -80,7 +80,7 @@ CREATE TABLE user_usage (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id TEXT NOT NULL UNIQUE,  -- Clerk user ID
   uses_remaining INTEGER NOT NULL DEFAULT 3,
-  plan_type TEXT NOT NULL DEFAULT 'free' CHECK (plan_type IN ('free', 'starter', 'pro', 'unlimited')),
+  plan_type TEXT NOT NULL DEFAULT 'free' CHECK (plan_type IN ('free', 'individual', 'starter', 'pro', 'unlimited')),
   plan_expires_at TIMESTAMP WITH TIME ZONE,
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
@@ -117,6 +117,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
 # Stripe Price IDs (create these in Stripe Dashboard)
+STRIPE_INDIVIDUAL_PRICE_ID=price_...
 STRIPE_STARTER_PRICE_ID=price_...
 STRIPE_PRO_PRICE_ID=price_...
 STRIPE_UNLIMITED_PRICE_ID=price_...
