@@ -92,9 +92,13 @@ export default function Home() {
 
   const handleManageSubscription = async () => {
     try {
-      console.log('🔍 Opening customer portal...')
+      console.log('🔍 Cancelling subscription...')
       
-      const response = await fetch('/api/create-customer-portal', {
+      const confirmed = confirm('Are you sure you want to cancel your unlimited subscription? You will keep unlimited access until the end of your billing period.')
+      
+      if (!confirmed) return
+
+      const response = await fetch('/api/cancel-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,19 +107,22 @@ export default function Home() {
 
       const data = await response.json()
       
-      console.log('🔍 Portal response:', { status: response.status, data })
+      console.log('🔍 Cancel response:', { status: response.status, data })
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create customer portal session')
+        throw new Error(data.error || 'Failed to cancel subscription')
       }
 
-      console.log('✅ Redirecting to portal:', data.url)
+      console.log('✅ Subscription cancelled successfully')
       
-      // Redirect to Stripe customer portal
-      window.location.href = data.url
+      // Show success message
+      alert(data.message || 'Subscription cancelled successfully!')
+      
+      // Refresh the page to update the UI
+      window.location.reload()
     } catch (error) {
-      console.error('❌ Error opening customer portal:', error)
-      alert(`Failed to open subscription management: ${error instanceof Error ? error.message : 'Please try again.'}`)
+      console.error('❌ Error cancelling subscription:', error)
+      alert(`Failed to cancel subscription: ${error instanceof Error ? error.message : 'Please try again.'}`)
     }
   }
 

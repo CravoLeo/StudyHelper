@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { X, Check, Zap, Star, Crown } from 'lucide-react'
 import { PRICING_PLANS } from '@/lib/database'
@@ -15,16 +15,74 @@ interface PricingModalProps {
   onPaymentSuccess?: () => void
 }
 
+interface SubscriptionStatus {
+  has_subscription: boolean
+  is_cancelled: boolean
+  current_period_end: string | null
+  cancel_at: string | null
+}
+
 export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentSuccess }: PricingModalProps) {
   const [loading, setLoading] = useState<string | null>(null)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null)
+  const [fetchingStatus, setFetchingStatus] = useState(false)
+
+  // Fetch subscription status when modal opens and user has unlimited plan
+  useEffect(() => {
+    if (isOpen && currentUsage?.plan_type === 'unlimited' && !fetchingStatus) {
+      fetchSubscriptionStatus()
+    }
+  }, [isOpen, currentUsage?.plan_type])
+
+  const fetchSubscriptionStatus = async () => {
+    setFetchingStatus(true)
+    try {
+      console.log('🔍 Fetching subscription status...')
+      
+      const response = await fetch('/api/cancel-subscription', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      console.log('🔍 Status fetch response:', { status: response.status })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('🔍 Status fetch data:', data)
+        setSubscriptionStatus(data)
+        console.log('✅ Subscription status updated:', data)
+      } else {
+        console.error('❌ Failed to fetch subscription status:', response.status)
+      }
+    } catch (error) {
+      console.error('❌ Error fetching subscription status:', error)
+    } finally {
+      setFetchingStatus(false)
+    }
+  }
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return ''
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
 
   if (!isOpen) return null
 
   const handleManageSubscription = async () => {
     try {
-      console.log('🔍 Opening customer portal...')
+      console.log('🔍 Cancelling subscription...')
       
-      const response = await fetch('/api/create-customer-portal', {
+      const confirmed = confirm('Are you sure you want to cancel your unlimited subscription? You will keep unlimited access until the end of your billing period.')
+      
+      if (!confirmed) return
+
+      const response = await fetch('/api/cancel-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,19 +91,41 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
 
       const data = await response.json()
       
-      console.log('🔍 Portal response:', { status: response.status, data })
+      console.log('🔍 Cancel response:', { status: response.status, data })
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create customer portal session')
+        // Check if it's already cancelled
+        if (response.status === 400 && data.is_cancelled) {
+          // Update local state with the cancellation info
+          setSubscriptionStatus({
+            has_subscription: true,
+            is_cancelled: true,
+            current_period_end: data.current_period_end,
+            cancel_at: data.current_period_end
+          })
+          alert('Subscription is already cancelled.')
+          return
+        }
+        throw new Error(data.error || 'Failed to cancel subscription')
       }
 
-      console.log('✅ Redirecting to portal:', data.url)
+      console.log('✅ Subscription cancelled successfully')
       
-      // Redirect to Stripe customer portal
-      window.location.href = data.url
+      // Update local state immediately with the cancellation info
+      setSubscriptionStatus({
+        has_subscription: true,
+        is_cancelled: true,
+        current_period_end: data.current_period_end,
+        cancel_at: data.cancel_at || data.current_period_end
+      })
+      
+      // Show success message with date
+      const endDate = data.current_period_end ? formatDate(data.current_period_end) : 'the end of your billing period'
+      alert(`Subscription cancelled successfully! Your unlimited access will continue until ${endDate}.`)
+      
     } catch (error) {
-      console.error('❌ Error opening customer portal:', error)
-      alert(`Failed to open subscription management: ${error instanceof Error ? error.message : 'Please try again.'}`)
+      console.error('❌ Error cancelling subscription:', error)
+      alert(`Failed to cancel subscription: ${error instanceof Error ? error.message : 'Please try again.'}`)
     }
   }
 
@@ -156,6 +236,10 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
             {/* Debug info */}
             <div className="mb-2 text-xs text-gray-500">
               DEBUG: plan_type = "{currentUsage.plan_type}", uses = {currentUsage.uses_remaining}
+              <br />
+              DEBUG: subscriptionStatus = {JSON.stringify(subscriptionStatus)}
+              <br />
+              DEBUG: fetchingStatus = {fetchingStatus.toString()}
             </div>
             
             {currentUsage.plan_type === 'unlimited' ? (
@@ -165,14 +249,34 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
                     <p className="text-white font-medium">
                       Current Plan: <span className="text-purple-400">Unlimited Plan</span>
                     </p>
-                    <p className="text-gray-400">Unlimited uses remaining</p>
+                    <p className="text-gray-400">
+                      {subscriptionStatus?.is_cancelled 
+                        ? `Unlimited uses until ${formatDate(subscriptionStatus.current_period_end)}`
+                        : 'Unlimited uses remaining'
+                      }
+                    </p>
                   </div>
-                  <button
-                    onClick={handleManageSubscription}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm"
-                  >
-                    Manage Subscription
-                  </button>
+                  <div className="flex flex-col items-end gap-2">
+                    {subscriptionStatus?.is_cancelled && (
+                      <p className="text-yellow-400 text-xs">
+                        Cancels on {formatDate(subscriptionStatus.current_period_end)}
+                      </p>
+                    )}
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={subscriptionStatus?.is_cancelled}
+                      className={`px-4 py-2 ${
+                        subscriptionStatus?.is_cancelled 
+                          ? 'bg-gray-600 cursor-not-allowed' 
+                          : 'bg-red-600 hover:bg-red-700'
+                      } text-white rounded-lg font-medium transition-colors text-sm`}
+                    >
+                      {subscriptionStatus?.is_cancelled 
+                        ? 'Already Cancelled' 
+                        : 'Cancel Subscription'
+                      }
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (
