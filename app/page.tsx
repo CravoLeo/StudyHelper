@@ -66,12 +66,12 @@ export default function Home() {
         if (response.ok) {
           const status = await response.json()
           console.log('🔍 Maintenance mode status:', status)
-          setMaintenanceMode(status.maintenanceMode)
+          setMaintenanceMode(status.maintenanceMode || false)
           setEnvStatus({
-            supabaseUrl: status.supabaseUrl,
-            supabaseKey: status.supabaseKey,
-            clerkPublic: status.clerkPublic,
-            openaiKey: status.openaiKey,
+            supabaseUrl: status.supabaseUrl || false,
+            supabaseKey: status.supabaseKey || false,
+            clerkPublic: status.clerkPublic || false,
+            openaiKey: status.openaiKey || false,
           })
         }
       } catch (error) {
@@ -84,7 +84,9 @@ export default function Home() {
       }
     }
 
-    checkMaintenanceMode()
+    // Add a small delay to ensure hydration is complete
+    const timer = setTimeout(checkMaintenanceMode, 100)
+    return () => clearTimeout(timer)
   }, [])
 
   // Early returns moved to end of component to fix hooks rule violation
