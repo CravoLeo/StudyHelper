@@ -34,10 +34,17 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           body: JSON.stringify({ planType }),
         })
 
-        const { sessionId, url } = await response.json()
+        const data = await response.json()
+        
+        // Check if the response is successful
+        if (!response.ok) {
+          throw new Error(data.error || `HTTP error! status: ${response.status}`)
+        }
+
+        const { sessionId, url } = data
         
         if (!sessionId) {
-          throw new Error('Failed to create subscription')
+          throw new Error('Failed to create subscription - no session ID received')
         }
 
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -65,10 +72,17 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           body: JSON.stringify({ planType }),
         })
 
-        const { sessionId, url } = await response.json()
+        const data = await response.json()
+        
+        // Check if the response is successful
+        if (!response.ok) {
+          throw new Error(data.error || `HTTP error! status: ${response.status}`)
+        }
+
+        const { sessionId, url } = data
         
         if (!sessionId) {
-          throw new Error('Failed to create checkout session')
+          throw new Error('Failed to create checkout session - no session ID received')
         }
 
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)

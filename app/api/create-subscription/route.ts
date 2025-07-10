@@ -8,8 +8,11 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 Creating subscription checkout...')
+    
     // Check if Stripe is properly configured
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
+      console.error('❌ Stripe not configured - missing or placeholder secret key')
       return NextResponse.json({ 
         error: 'Payment system is currently unavailable. Please try again later.' 
       }, { status: 503 })
@@ -31,6 +34,16 @@ export async function POST(request: NextRequest) {
     const plan = PRICING_PLANS[planType as keyof typeof PRICING_PLANS]
     const priceId = STRIPE_PRICE_IDS[planType as keyof typeof STRIPE_PRICE_IDS]
 
+    console.log('🔍 Using price ID:', priceId, 'for subscription plan:', planType)
+
+    // Validate price ID
+    if (!priceId || priceId.includes('placeholder')) {
+      console.error('❌ Invalid price ID for subscription plan:', planType, 'priceId:', priceId)
+      return NextResponse.json({ 
+        error: 'Payment configuration error. Please contact support.' 
+      }, { status: 503 })
+    }
+
     // Create Checkout Session for subscription
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -49,6 +62,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    console.log('✅ Subscription checkout session created successfully:', session.id)
+
     return NextResponse.json({
       sessionId: session.id,
       url: session.url,
@@ -59,7 +74,24 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error creating subscription checkout:', error)
-    return NextResponse.json({ error: 'Failed to create subscription checkout' }, { status: 500 })
+    console.error('❌ Error creating subscription checkout:', error)
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('No such price')) {
+        return NextResponse.json({ 
+          error: 'Invalid price configuration. Please contact support.' 
+        }, { status: 503 })
+      }
+      if (error.message.includes('Invalid API Key')) {
+        return NextResponse.json({ 
+          error: 'Payment system configuration error. Please contact support.' 
+        }, { status: 503 })
+      }
+    }
+    
+    return NextResponse.json({ 
+      error: 'Failed to create subscription checkout. Please try again.' 
+    }, { status: 500 })
   }
 } 

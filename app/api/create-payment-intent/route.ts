@@ -11,6 +11,14 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Stripe Secret Key exists:', !!process.env.STRIPE_SECRET_KEY)
     console.log('🔍 Stripe Secret Key starts with sk_live:', process.env.STRIPE_SECRET_KEY?.startsWith('sk_live'))
 
+    // Check if Stripe is properly configured
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
+      console.error('❌ Stripe not configured - missing or placeholder secret key')
+      return NextResponse.json({ 
+        error: 'Payment system is currently unavailable. Please try again later.' 
+      }, { status: 503 })
+    }
+
     const { userId } = await auth()
     
     if (!userId) {
@@ -35,6 +43,14 @@ export async function POST(request: NextRequest) {
     
     console.log('🔍 Using price ID:', priceId, 'for plan:', planType)
 
+    // Validate price ID
+    if (!priceId || priceId.includes('placeholder')) {
+      console.error('❌ Invalid price ID for plan:', planType, 'priceId:', priceId)
+      return NextResponse.json({ 
+        error: 'Payment configuration error. Please contact support.' 
+      }, { status: 503 })
+    }
+
     // Create Checkout Session using pre-created price IDs
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -53,6 +69,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    console.log('✅ Checkout session created successfully:', session.id)
+
     return NextResponse.json({
       sessionId: session.id,
       url: session.url,
@@ -63,7 +81,24 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error creating checkout session:', error)
-    return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 })
+    console.error('❌ Error creating checkout session:', error)
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('No such price')) {
+        return NextResponse.json({ 
+          error: 'Invalid price configuration. Please contact support.' 
+        }, { status: 503 })
+      }
+      if (error.message.includes('Invalid API Key')) {
+        return NextResponse.json({ 
+          error: 'Payment system configuration error. Please contact support.' 
+        }, { status: 503 })
+      }
+    }
+    
+    return NextResponse.json({ 
+      error: 'Failed to create checkout session. Please try again.' 
+    }, { status: 500 })
   }
 } 
