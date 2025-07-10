@@ -6,5 +6,6 @@ export async function GET() {
     supabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     clerkPublic: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     openaiKey: !!process.env.OPENAI_API_KEY,
+    maintenanceMode: process.env.MAINTENANCE_MODE === 'true',
   })
 } 

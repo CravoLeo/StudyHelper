@@ -6,6 +6,7 @@ import FileUpload from '@/components/FileUpload'
 import TextExtraction from '@/components/TextExtraction'
 import AIGeneration from '@/components/AIGeneration'
 import PricingModal from '@/components/PricingModal'
+import MaintenanceMode from '@/components/MaintenanceMode'
 import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap } from 'lucide-react'
 import { SavedDocument, isLocalMode } from '@/lib/supabase'
 import { saveDocument, getDocuments, deleteDocument, UserUsage } from '@/lib/database'
@@ -24,6 +25,7 @@ export default function Home() {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showDebug, setShowDebug] = useState(false)
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [envStatus, setEnvStatus] = useState({
     supabaseUrl: false,
     supabaseKey: false,
@@ -35,6 +37,36 @@ export default function Home() {
   const [userUsage, setUserUsage] = useState<UserUsage | null>(null)
   const [showPricingModal, setShowPricingModal] = useState(false)
   const [usageLoading, setUsageLoading] = useState(false)
+
+  // Check maintenance mode from environment
+  useEffect(() => {
+    const checkMaintenanceMode = async () => {
+      try {
+        const response = await fetch('/api/health-check')
+        if (response.ok) {
+          const status = await response.json()
+          setMaintenanceMode(status.maintenanceMode)
+          setEnvStatus({
+            supabaseUrl: status.supabaseUrl,
+            supabaseKey: status.supabaseKey,
+            clerkPublic: status.clerkPublic,
+            openaiKey: status.openaiKey,
+          })
+        }
+      } catch (error) {
+        console.error('Error checking maintenance mode:', error)
+        // Default to false if API call fails
+        setMaintenanceMode(false)
+      }
+    }
+
+    checkMaintenanceMode()
+  }, [])
+
+  // Show maintenance mode if enabled
+  if (maintenanceMode) {
+    return <MaintenanceMode />
+  }
 
   // Debug information
   const debugInfo = {
@@ -69,22 +101,7 @@ export default function Home() {
     setCurrentStep('upload')
   }, [])
 
-  // Load environment status on mount
-  useEffect(() => {
-    const loadEnvStatus = async () => {
-      try {
-        const response = await fetch('/api/health-check')
-        if (response.ok) {
-          const status = await response.json()
-          setEnvStatus(status)
-        }
-      } catch (error) {
-        console.error('Error loading environment status:', error)
-      }
-    }
-
-    loadEnvStatus()
-  }, [])
+  // Environment status is now loaded in the maintenance mode check
 
   // Load user usage
   const loadUserUsage = useCallback(async () => {
