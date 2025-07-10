@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { createSubscription, getOrCreateStripeCustomer, STRIPE_PRICE_IDS } from '@/lib/stripe'
+import { stripe, STRIPE_PRICE_IDS } from '@/lib/stripe'
 import { PRICING_PLANS } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
@@ -11,25 +11,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user email from Clerk (you'll need to import this)
-    // For now, we'll use a placeholder - you should get this from Clerk
-    const userEmail = `user-${userId}@example.com` // Replace with actual email from Clerk
-
-    // Create or get Stripe customer
-    const customerId = await getOrCreateStripeCustomer(userId, userEmail)
-
-    // Create subscription for unlimited plan
-    const subscription = await createSubscription(customerId, STRIPE_PRICE_IDS.unlimited)
-
     const plan = PRICING_PLANS.unlimited
 
-    // Extract client secret from the expanded invoice
-    const latestInvoice = subscription.latest_invoice as any
-    const clientSecret = latestInvoice?.payment_intent?.client_secret || null
+    // Create Checkout Session for subscription
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: STRIPE_PRICE_IDS.unlimited,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${request.headers.get('origin')}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${request.headers.get('origin')}/?payment=cancel`,
+      metadata: {
+        userId: userId,
+        planType: 'unlimited',
+      },
+    })
 
     return NextResponse.json({
-      subscriptionId: subscription.id,
-      clientSecret: clientSecret,
+      sessionId: session.id,
+      url: session.url,
       amount: plan.price,
       planType: 'unlimited',
       planName: plan.name,
@@ -37,7 +41,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error creating subscription:', error)
-    return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 })
+    console.error('Error creating subscription checkout:', error)
+    return NextResponse.json({ error: 'Failed to create subscription checkout' }, { status: 500 })
   }
 } 

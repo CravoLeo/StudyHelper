@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { updateUserUsage, PRICING_PLANS } from '@/lib/database'
+import { updateUserUsage, getUserUsage, PRICING_PLANS } from '@/lib/database'
 import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
+  console.log('🔔 Webhook received!')
+  
   try {
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
 
+    console.log('Signature present:', !!signature)
+    console.log('Body length:', body.length)
+    console.log('STRIPE_WEBHOOK_SECRET configured:', !!process.env.STRIPE_WEBHOOK_SECRET)
+
     if (!signature) {
+      console.log('❌ No signature provided')
       return NextResponse.json({ error: 'No signature' }, { status: 400 })
     }
 
@@ -18,9 +25,14 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
 
-    console.log('Stripe webhook event:', event.type)
+    console.log('🎯 Stripe webhook event:', event.type)
+    console.log('Event data:', JSON.stringify(event.data.object, null, 2))
 
     switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session)
+        break
+        
       case 'payment_intent.succeeded':
         await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent)
         break
@@ -42,6 +54,58 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Webhook error:', error)
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 400 })
+  }
+}
+
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  try {
+    const userId = session.metadata?.userId
+    const planType = session.metadata?.planType
+
+    if (!userId || !planType) {
+      console.error('Missing user ID or plan type in checkout session')
+      return
+    }
+
+    console.log(`Processing checkout session for user ${userId} with plan ${planType}`)
+
+    // Get current usage to add to existing uses
+    const currentUsage = await getUserUsage(userId)
+    const currentUses = currentUsage?.uses_remaining || 0
+
+    // Update user usage based on plan type - ADD to existing uses
+    if (planType === 'starter') {
+      const newUses = currentUses + PRICING_PLANS.starter.uses
+      await updateUserUsage(userId, {
+        uses_remaining: newUses,
+        plan_type: 'starter'
+      })
+      console.log(`✅ Added ${PRICING_PLANS.starter.uses} uses to existing ${currentUses} = ${newUses} total`)
+    } else if (planType === 'pro') {
+      const newUses = currentUses + PRICING_PLANS.pro.uses
+      await updateUserUsage(userId, {
+        uses_remaining: newUses,
+        plan_type: 'pro'
+      })
+      console.log(`✅ Added ${PRICING_PLANS.pro.uses} uses to existing ${currentUses} = ${newUses} total`)
+    } else if (planType === 'unlimited') {
+      // Set unlimited plan for 30 days
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 30)
+
+      await updateUserUsage(userId, {
+        uses_remaining: -1, // Unlimited
+        plan_type: 'unlimited',
+        plan_expires_at: expiresAt.toISOString(),
+        stripe_subscription_id: session.subscription as string
+      })
+      console.log(`✅ Set unlimited plan until ${expiresAt}`)
+    }
+
+    console.log(`✅ Successfully updated usage for user ${userId} with plan ${planType}`)
+
+  } catch (error) {
+    console.error('Error handling checkout session completed:', error)
   }
 }
 
@@ -68,17 +132,25 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       return
     }
 
-    // Update user usage based on plan type
+    // Get current usage to add to existing uses
+    const currentUsage = await getUserUsage(userId)
+    const currentUses = currentUsage?.uses_remaining || 0
+
+    // Update user usage based on plan type - ADD to existing uses
     if (planType === 'starter') {
+      const newUses = currentUses + PRICING_PLANS.starter.uses
       await updateUserUsage(userId, {
-        uses_remaining: PRICING_PLANS.starter.uses,
+        uses_remaining: newUses,
         plan_type: 'starter'
       })
+      console.log(`✅ Added ${PRICING_PLANS.starter.uses} uses to existing ${currentUses} = ${newUses} total`)
     } else if (planType === 'pro') {
+      const newUses = currentUses + PRICING_PLANS.pro.uses
       await updateUserUsage(userId, {
-        uses_remaining: PRICING_PLANS.pro.uses,
+        uses_remaining: newUses,
         plan_type: 'pro'
       })
+      console.log(`✅ Added ${PRICING_PLANS.pro.uses} uses to existing ${currentUses} = ${newUses} total`)
     }
 
     console.log(`Updated usage for user ${userId} with plan ${planType}`)

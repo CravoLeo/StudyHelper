@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { createPaymentIntent, getOrCreateStripeCustomer } from '@/lib/stripe'
+import { stripe } from '@/lib/stripe'
 import { PRICING_PLANS } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
@@ -24,18 +24,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     }
 
-    // Get user email from Clerk (you'll need to import this)
-    // For now, we'll use a placeholder - you should get this from Clerk
-    const userEmail = `user-${userId}@example.com` // Replace with actual email from Clerk
-
-    // Create or get Stripe customer
-    const customerId = await getOrCreateStripeCustomer(userId, userEmail)
-
-    // Create payment intent
-    const paymentIntent = await createPaymentIntent(customerId, plan.price, planType)
+    // Create Checkout Session for simpler payment flow
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: plan.name,
+              description: plan.description,
+            },
+            unit_amount: plan.price * 100, // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${request.headers.get('origin')}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${request.headers.get('origin')}/?payment=cancel`,
+      metadata: {
+        userId: userId,
+        planType: planType,
+      },
+    })
 
     return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
+      sessionId: session.id,
+      url: session.url,
       amount: plan.price,
       planType: planType,
       planName: plan.name,
@@ -43,7 +59,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error creating payment intent:', error)
-    return NextResponse.json({ error: 'Failed to create payment intent' }, { status: 500 })
+    console.error('Error creating checkout session:', error)
+    return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 })
   }
 } 

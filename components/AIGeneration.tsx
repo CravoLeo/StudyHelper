@@ -120,6 +120,11 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           // Small delay to show completion
           setTimeout(() => {
             onAIGenerated(mockSummary, mockQuestions)
+            
+            // Refresh usage after successful generation (even in demo mode for consistency)
+            const refreshEvent = new CustomEvent('refreshUsage')
+            window.dispatchEvent(refreshEvent)
+            console.log('🔄 Usage refresh event dispatched after demo generation')
           }, 500)
           
         } else {
@@ -154,6 +159,11 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           // Small delay to show completion
           setTimeout(() => {
             onAIGenerated(data.summary, data.questions)
+            
+            // Refresh usage after successful AI generation
+            const refreshEvent = new CustomEvent('refreshUsage')
+            window.dispatchEvent(refreshEvent)
+            console.log('🔄 Usage refresh event dispatched after AI generation')
           }, 500)
         }
         

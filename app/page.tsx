@@ -167,9 +167,77 @@ export default function Home() {
     }
   }, [])
 
+  // Listen for usage refresh events from child components
+  useEffect(() => {
+    const handleRefreshUsage = () => {
+      console.log('🔄 Refreshing usage after successful operation')
+      loadUserUsage()
+    }
+
+    window.addEventListener('refreshUsage', handleRefreshUsage)
+    
+    return () => {
+      window.removeEventListener('refreshUsage', handleRefreshUsage)
+    }
+  }, [loadUserUsage])
+
+  // Handle successful payment (fallback for webhook issues in local development)
+  useEffect(() => {
+    const handlePaymentSuccess = async () => {
+      if (!isSignedIn) return
+      
+      const urlParams = new URLSearchParams(window.location.search)
+      const paymentStatus = urlParams.get('payment')
+      const sessionId = urlParams.get('session_id')
+      
+      if (paymentStatus === 'success' && sessionId) {
+        console.log('🔄 Payment success detected, updating usage...')
+        
+        try {
+          const response = await fetch('/api/update-usage-after-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sessionId })
+          })
+          
+          if (response.ok) {
+            const result = await response.json()
+            console.log('✅ Usage updated successfully:', result)
+            
+            // Refresh user usage
+            await loadUserUsage()
+            
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname)
+          } else {
+            console.error('Failed to update usage after payment')
+          }
+        } catch (error) {
+          console.error('Error updating usage after payment:', error)
+        }
+      }
+    }
+    
+    handlePaymentSuccess()
+  }, [isSignedIn, loadUserUsage])
+
   // Save current document to Supabase
   const saveCurrentDocument = useCallback(async () => {
-    if (!uploadedFile || !summary || questions.length === 0) return
+    console.log('💾 Save button clicked')
+    console.log('🔍 Checking save conditions:', {
+      hasFile: !!uploadedFile,
+      hasSummary: !!summary && summary.trim().length > 0,
+      hasQuestions: questions.length > 0,
+      userId: user?.id,
+      demoMode
+    })
+
+    if (!uploadedFile || !summary || questions.length === 0) {
+      console.log('❌ Save conditions not met')
+      return
+    }
 
     try {
       const documentData = {
@@ -180,19 +248,22 @@ export default function Home() {
         user_id: user?.id // Use Clerk user ID
       }
 
+      console.log('📝 Attempting to save document:', documentData)
       const savedDoc = await saveDocument(documentData)
+      console.log('💾 Save result:', savedDoc)
       
       if (savedDoc) {
         setSavedDocuments(prev => [savedDoc, ...prev])
+        console.log('✅ Document saved successfully')
         
         // Show success notification
         setShowSaveSuccess(true)
         setTimeout(() => setShowSaveSuccess(false), 3000)
       } else {
-        console.error('Failed to save document')
+        console.error('❌ Failed to save document - saveDocument returned null')
       }
     } catch (error) {
-      console.error('Error saving document:', error)
+      console.error('❌ Error saving document:', error)
     }
   }, [uploadedFile, summary, questions, demoMode, user?.id])
 
@@ -371,7 +442,12 @@ export default function Home() {
         
         {/* Navigation Links */}
         <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
-          <button className="hover:text-white transition-colors">Features</button>
+          <button 
+            onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+            className="hover:text-white transition-colors"
+          >
+            Features
+          </button>
           <button onClick={showHistoryModal} className="hover:text-white transition-colors">
             History {savedDocuments.length > 0 && (
               <span className="ml-1 bg-green-500 text-black px-2 py-1 rounded-full text-xs font-medium">
@@ -407,24 +483,52 @@ export default function Home() {
             </div>
           )}
           
-          <button className="hover:text-white transition-colors">Reviews</button>
+          <button 
+            onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+            className="hover:text-white transition-colors"
+          >
+            Reviews
+          </button>
         </div>
         
         {/* Auth Buttons */}
         <div className="flex items-center gap-3">
           {isSignedIn ? (
             <div className="flex items-center gap-3">
+              {userUsage && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm border border-gray-700">
+                  <span className={`font-medium capitalize ${
+                    userUsage.plan_type === 'unlimited' ? 'text-purple-400' :
+                    userUsage.plan_type === 'pro' ? 'text-yellow-400' :
+                    userUsage.plan_type === 'starter' ? 'text-blue-400' :
+                    'text-gray-300'
+                  }`}>
+                    {userUsage.plan_type} Plan
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm">
                 <UserButton />
-                <span className="hidden sm:inline">
-                  {user.firstName || user.emailAddresses[0].emailAddress.split('@')[0]}
-                </span>
+                <div className="hidden sm:block">
+                  <div className="text-xs text-gray-300">
+                    {user.firstName || user.emailAddresses[0].emailAddress.split('@')[0]}
+                  </div>
+                  {userUsage && (
+                    <div className="text-xs">
+                      <span className="text-gray-400">Uses: </span>
+                      {userUsage.uses_remaining !== -1 ? (
+                        <span className="text-gray-300">
+                          {userUsage.uses_remaining} left
+                        </span>
+                      ) : (
+                        <span className="text-green-400">
+                          Unlimited
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-              <SignOutButton>
-                <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm">
-                  Sign Out
-                </button>
-              </SignOutButton>
             </div>
           ) : (
             <SignInButton mode="modal">
@@ -580,7 +684,7 @@ export default function Home() {
 
       {/* Features Section - Similar to remove.bg's approach */}
       {currentStep === 'upload' && (
-        <div className="max-w-5xl mx-auto px-6 py-16">
+        <div id="features" className="max-w-5xl mx-auto px-6 py-16">
           <div className="text-center mb-12">
             <h2 className="text-2xl font-bold text-white mb-3">
               Boost creativity – and efficiency!
@@ -627,7 +731,7 @@ export default function Home() {
 
       {/* Reviews Section - More compact */}
       {currentStep === 'upload' && (
-        <div className="max-w-5xl mx-auto px-6 py-16">
+        <div id="reviews" className="max-w-5xl mx-auto px-6 py-16">
           <div className="text-center mb-12">
             <h2 className="text-2xl font-bold text-white mb-3">What students are saying</h2>
             <p className="text-gray-400">Join thousands of students studying smarter</p>

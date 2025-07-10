@@ -50,6 +50,11 @@ export default function TextExtraction({ file, onTextExtracted }: TextExtraction
 
         setExtractedText(data.text || '')
         onTextExtracted(data.text || '')
+        
+        // Refresh usage after successful extraction
+        const refreshEvent = new CustomEvent('refreshUsage')
+        window.dispatchEvent(refreshEvent)
+        console.log('🔄 Usage refresh event dispatched')
       } catch (err) {
         console.error('❌ Text extraction failed:', err)
         setError(err instanceof Error ? err.message : 'Failed to extract text')

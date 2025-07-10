@@ -33,9 +33,9 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           },
         })
 
-        const { clientSecret, subscriptionId } = await response.json()
+        const { sessionId, url } = await response.json()
         
-        if (!clientSecret) {
+        if (!sessionId) {
           throw new Error('Failed to create subscription')
         }
 
@@ -45,19 +45,14 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           throw new Error('Stripe not loaded')
         }
 
-        // Redirect to Stripe Checkout or handle payment
-        const { error } = await stripe.confirmPayment({
-          clientSecret,
-          confirmParams: {
-            return_url: `${window.location.origin}/payment-success?type=subscription`,
-          },
+        // Redirect to Stripe Checkout
+        const { error } = await stripe.redirectToCheckout({
+          sessionId: sessionId,
         })
 
         if (error) {
           console.error('Payment failed:', error)
-        } else {
-          // Payment successful
-          onPaymentSuccess?.()
+          alert('Payment failed: ' + error.message)
         }
       } else {
         // Handle one-time payment
@@ -69,10 +64,10 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           body: JSON.stringify({ planType }),
         })
 
-        const { clientSecret } = await response.json()
+        const { sessionId, url } = await response.json()
         
-        if (!clientSecret) {
-          throw new Error('Failed to create payment intent')
+        if (!sessionId) {
+          throw new Error('Failed to create checkout session')
         }
 
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -81,18 +76,14 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           throw new Error('Stripe not loaded')
         }
 
-        const { error } = await stripe.confirmPayment({
-          clientSecret,
-          confirmParams: {
-            return_url: `${window.location.origin}/payment-success?type=one-time`,
-          },
+        // Redirect to Stripe Checkout
+        const { error } = await stripe.redirectToCheckout({
+          sessionId: sessionId,
         })
 
         if (error) {
           console.error('Payment failed:', error)
-        } else {
-          // Payment successful
-          onPaymentSuccess?.()
+          alert('Payment failed: ' + error.message)
         }
       }
     } catch (error) {

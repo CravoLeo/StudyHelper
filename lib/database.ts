@@ -43,6 +43,9 @@ export const PRICING_PLANS = {
 
 // Save a document to Supabase or localStorage
 export async function saveDocument(document: Omit<SavedDocument, 'id' | 'created_at' | 'updated_at'>): Promise<SavedDocument | null> {
+  console.log('🔍 saveDocument called with:', document)
+  console.log('🔍 isLocalMode:', isLocalMode)
+  
   // If in local mode, use localStorage
   if (isLocalMode) {
     console.warn('⚠️  Saving to localStorage (local mode)')
@@ -59,11 +62,13 @@ export async function saveDocument(document: Omit<SavedDocument, 'id' | 'created
     existing.unshift(savedDoc)
     localStorage.setItem('studyhelper-documents', JSON.stringify(existing))
     
+    console.log('✅ Successfully saved to localStorage')
     return savedDoc
   }
 
   // Use Supabase for cloud storage
   try {
+    console.log('🔍 Attempting to save to Supabase...')
     const { data, error } = await supabase
       .from('documents')
       .insert({
@@ -76,14 +81,17 @@ export async function saveDocument(document: Omit<SavedDocument, 'id' | 'created
       .select()
       .single()
 
+    console.log('🔍 Supabase response:', { data, error })
+
     if (error) {
-      console.error('Error saving document:', error)
+      console.error('❌ Error saving document to Supabase:', error)
       return null
     }
 
+    console.log('✅ Successfully saved to Supabase')
     return data
   } catch (error) {
-    console.error('Error saving document:', error)
+    console.error('❌ Exception saving document to Supabase:', error)
     return null
   }
 }
