@@ -55,8 +55,8 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
         
         if (!demoMode) {
           // Refresh usage after successful extraction (only in real mode)
-          const refreshEvent = new CustomEvent('refreshUsage')
-          window.dispatchEvent(refreshEvent)
+        const refreshEvent = new CustomEvent('refreshUsage')
+        window.dispatchEvent(refreshEvent)
           console.log('🔄 Usage refresh event dispatched after text extraction')
         } else {
           console.log('🎭 Demo mode - no usage consumed for text extraction')

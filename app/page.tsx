@@ -42,19 +42,26 @@ export default function Home() {
   // Check maintenance mode from environment
   useEffect(() => {
     const checkMaintenanceMode = async () => {
+      console.log('🔄 Starting maintenance mode check...')
+      console.log('🌐 Current hostname:', window.location.hostname)
+      
       try {
         // In development (localhost), always disable maintenance mode
         const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
                             window.location.hostname === '0.0.0.0'
         
+        console.log('🔧 Is development?', isDevelopment)
+        
         if (isDevelopment) {
           console.log('🔧 Development mode detected - bypassing maintenance mode')
           setMaintenanceMode(false)
           setMaintenanceChecked(true)
+          console.log('✅ Development bypass complete')
           return
         }
 
+        console.log('🌐 Production mode - checking API...')
         const response = await fetch('/api/health-check')
         if (response.ok) {
           const status = await response.json()
@@ -68,10 +75,11 @@ export default function Home() {
           })
         }
       } catch (error) {
-        console.error('Error checking maintenance mode:', error)
+        console.error('❌ Error checking maintenance mode:', error)
         // Default to false if API call fails
         setMaintenanceMode(false)
       } finally {
+        console.log('🏁 Maintenance mode check complete')
         setMaintenanceChecked(true)
       }
     }
@@ -86,7 +94,12 @@ export default function Home() {
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading StudyHelper...</h2>
-          <p className="text-gray-600">Please wait while we prepare your experience.</p>
+          <p className="text-gray-600 mb-4">Please wait while we prepare your experience.</p>
+          <div className="text-sm text-gray-500 bg-gray-50 rounded p-3">
+            <p className="font-mono">🔧 DEBUG: Checking maintenance mode...</p>
+            <p className="font-mono">🌐 Location: {typeof window !== 'undefined' ? window.location.hostname : 'server'}</p>
+            <p className="font-mono">📊 Status: {maintenanceChecked ? 'Checked' : 'Checking...'}</p>
+          </div>
         </div>
       </div>
     )

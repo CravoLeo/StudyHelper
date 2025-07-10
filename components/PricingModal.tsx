@@ -112,17 +112,17 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
           <div className="mb-8 p-4 bg-gray-800/50 rounded-lg">
             {currentUsage.plan_type === 'unlimited' ? (
               <>
-                <p className="text-white font-medium">
+            <p className="text-white font-medium">
                   Current Plan: <span className="text-purple-400">Unlimited Plan</span>
-                </p>
+            </p>
                 <p className="text-gray-400">Unlimited uses remaining</p>
               </>
             ) : (
               <>
                 <p className="text-white font-medium">Current Usage Credits</p>
-                <p className="text-gray-400">
+            <p className="text-gray-400">
                   {currentUsage.uses_remaining} uses remaining
-                </p>
+            </p>
               </>
             )}
           </div>
