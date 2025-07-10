@@ -4,6 +4,9 @@ import pdfParse from 'pdf-parse'
 import { auth } from '@clerk/nextjs/server'
 import { canUserMakeRequest, decrementUserUsage } from '@/lib/database'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Helper function to create a timeout promise
 const createTimeout = (ms: number) => {
   return new Promise((_, reject) => {

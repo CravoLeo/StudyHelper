@@ -3,6 +3,9 @@ import { auth } from '@clerk/nextjs/server'
 import { stripe } from '@/lib/stripe'
 import { updateUserUsage, getUserUsage, PRICING_PLANS } from '@/lib/database'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()

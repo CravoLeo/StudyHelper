@@ -4,19 +4,26 @@ import { updateUserUsage, getUserUsage, PRICING_PLANS } from '@/lib/database'
 import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
-  console.log('🔔 Webhook received!')
+  console.log('🔔 Stripe Webhook received!')
+  console.log('📍 Request URL:', request.url)
+  console.log('🌐 Request headers:', Object.fromEntries(request.headers.entries()))
   
   try {
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
 
-    console.log('Signature present:', !!signature)
-    console.log('Body length:', body.length)
-    console.log('STRIPE_WEBHOOK_SECRET configured:', !!process.env.STRIPE_WEBHOOK_SECRET)
+    console.log('✅ Signature present:', !!signature)
+    console.log('📄 Body length:', body.length)
+    console.log('🔐 STRIPE_WEBHOOK_SECRET configured:', !!process.env.STRIPE_WEBHOOK_SECRET)
 
     if (!signature) {
       console.log('❌ No signature provided')
       return NextResponse.json({ error: 'No signature' }, { status: 400 })
+    }
+
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      console.log('❌ STRIPE_WEBHOOK_SECRET not configured')
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
     }
 
     const event = stripe.webhooks.constructEvent(
@@ -25,35 +32,44 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
 
-    console.log('🎯 Stripe webhook event:', event.type)
-    console.log('Event data:', JSON.stringify(event.data.object, null, 2))
+    console.log('🎯 Stripe webhook event received:', event.type)
+    console.log('📋 Event ID:', event.id)
+    console.log('🔍 Event data:', JSON.stringify(event.data.object, null, 2))
 
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log('🛒 Processing checkout session completed')
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session)
         break
         
       case 'payment_intent.succeeded':
+        console.log('💳 Processing payment intent succeeded')
         await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent)
         break
       
       case 'invoice.payment_succeeded':
+        console.log('🧾 Processing invoice payment succeeded')
         await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice)
         break
       
       case 'customer.subscription.deleted':
+        console.log('🚫 Processing subscription deleted')
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
         break
       
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        console.log(`ℹ️  Unhandled event type: ${event.type}`)
     }
 
-    return NextResponse.json({ received: true })
+    console.log('✅ Webhook processed successfully')
+    return NextResponse.json({ received: true, processed: true })
 
   } catch (error) {
-    console.error('Webhook error:', error)
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 400 })
+    console.error('❌ Webhook error:', error)
+    return NextResponse.json({ 
+      error: 'Webhook handler failed', 
+      message: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 400 })
   }
 }
 
