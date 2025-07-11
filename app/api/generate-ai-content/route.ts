@@ -6,6 +6,9 @@ import { canUserMakeRequest, decrementUserUsage } from '@/lib/database'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
+// Add runtime configuration for Vercel
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()

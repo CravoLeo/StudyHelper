@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Vercel API Route Test</h1>
+        <p>This page helps diagnose API routing issues on Vercel.</p>
+        
+        <button onclick="testHealthCheck()">Test Health Check API</button>
+        <button onclick="testAIAPI()">Test AI API (requires auth)</button>
+        <button onclick="testAllRoutes()">Test All API Routes</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function addResult(content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultElement = document.createElement('div');
+            resultElement.className = `result ${type}`;
+            resultElement.textContent = content;
+            resultsDiv.appendChild(resultElement);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testHealthCheck() {
+            clearResults();
+            addResult('🔍 Testing /api/health-check endpoint...');
+            
+            try {
+                const response = await fetch('/api/health-check');
+                const data = await response.json();
+                
+                addResult(`✅ Health Check Response (${response.status}):
+${JSON.stringify(data, null, 2)}`, 'success');
+                
+            } catch (error) {
+                addResult(`❌ Health Check Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAIAPI() {
+            clearResults();
+            addResult('🔍 Testing /api/generate-ai-content endpoint...');
+            
+            try {
+                const response = await fetch('/api/generate-ai-content', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: 'This is a test document for checking if the AI API is working.'
+                    })
+                });
+                
+                const text = await response.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = text;
+                }
+                
+                if (response.ok) {
+                    addResult(`✅ AI API Response (${response.status}):
+${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    addResult(`❌ AI API Error (${response.status}):
+${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`, 'error');
+                    
+                    if (response.status === 404) {
+                        addResult(`🔧 Vercel 404 Troubleshooting:
+1. Check Vercel Functions tab - is the API route deployed?
+2. Check deployment logs for build errors
+3. Verify the file exists at /app/api/generate-ai-content/route.ts
+4. Check if there are any import errors in the route file`, 'info');
+                    }
+                }
+                
+            } catch (error) {
+                addResult(`❌ AI API Test Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllRoutes() {
+            clearResults();
+            addResult('🔍 Testing all API routes...');
+            
+            const routes = [
+                '/api/health-check',
+                '/api/extract-text',
+                '/api/generate-ai-content',
+                '/api/user-usage',
+                '/api/create-payment-intent',
+                '/api/create-subscription',
+                '/api/cancel-subscription',
+                '/api/create-customer-portal',
+                '/api/update-usage-after-payment',
+                '/api/test-upload'
+            ];
+            
+            for (const route of routes) {
+                try {
+                    const response = await fetch(route, {
+                        method: route.includes('generate-ai-content') || route.includes('extract-text') ? 'POST' : 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: route.includes('generate-ai-content') ? JSON.stringify({text: 'test'}) : undefined
+                    });
+                    
+                    const status = response.status;
+                    const statusText = response.statusText;
+                    
+                    if (status === 404) {
+                        addResult(`❌ ${route}: 404 Not Found`, 'error');
+                    } else if (status === 401) {
+                        addResult(`🔐 ${route}: 401 Unauthorized (needs auth)`, 'info');
+                    } else if (status === 405) {
+                        addResult(`⚠️ ${route}: 405 Method Not Allowed`, 'info');
+                    } else if (status >= 200 && status < 300) {
+                        addResult(`✅ ${route}: ${status} ${statusText}`, 'success');
+                    } else {
+                        addResult(`⚠️ ${route}: ${status} ${statusText}`, 'info');
+                    }
+                    
+                } catch (error) {
+                    addResult(`❌ ${route}: ${error.message}`, 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html> 
