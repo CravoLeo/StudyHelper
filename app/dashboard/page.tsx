@@ -245,6 +245,7 @@ export default function Dashboard() {
           setShowPricingModal(false)
           refreshUsage()
         }}
+        language="pt"
       />
       
       {/* Next Steps Modal */}

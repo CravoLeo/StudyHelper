@@ -5,6 +5,84 @@ import { loadStripe } from '@stripe/stripe-js'
 import { X, Check, Zap, Star, Crown } from 'lucide-react'
 import { PRICING_PLANS } from '@/lib/database'
 
+// Language translations for pricing
+const translations = {
+  pt: {
+    upgradeYourPlan: 'Atualize Seu Plano',
+    currentPlan: 'Plano Atual',
+    unlimitedPlan: 'Plano Ilimitado',
+    unlimitedUses: 'Usos ilimitados',
+    unlimitedUsesRemaining: 'Usos ilimitados restantes',
+    unlimitedUsesUntil: 'Usos ilimitados até',
+    manage: 'Gerenciar',
+    cancel: 'Cancelar',
+    manageSubscription: 'Gerenciar Assinatura',
+    cancelSubscription: 'Cancelar Assinatura',
+    bestValue: 'Melhor Valor',
+    perfectForRegularUsers: 'Perfeito para usuários regulares',
+    perfectForStudents: 'Perfeito para estudantes e profissionais',
+    perfectForHeavyUsers: 'Perfeito para usuários pesados',
+    pdfAndImageSupport: 'Suporte a PDF e imagens',
+    aiPoweredSummaries: 'Resumos com IA',
+    allFeaturesIncluded: 'Todas as funcionalidades incluídas',
+    greatValueForMoney: 'Ótimo custo-benefício',
+    bulkUsageDiscount: 'Uso em lote com desconto',
+    unlimitedDocumentProcessing: 'Processamento ilimitado de documentos',
+    cancelAnytime: 'Cancele a qualquer momento',
+    buyNow: 'Comprar Agora',
+    upgradeNow: 'Atualizar Agora',
+    subscribeNow: 'Assinar Agora',
+    processing: 'Processando...',
+    or: 'OU',
+    buyIndividualUses: 'Comprar Usos Individuais',
+    needJustFewUses: 'Precisa de apenas alguns usos? Obtenha {uses} usos por R$ {price} - perfeito para tarefas rápidas!',
+    buyUsesButton: 'Comprar {uses} Usos - R$ {price}',
+    securePayment: '💳 Pagamento seguro processado pelo Stripe',
+    dataProtection: '🔒 Seus dados estão seguros e criptografados',
+    perMonth: 'por mês',
+    additionalUses: 'usos adicionais',
+    usesGreatValue: 'usos - ótimo valor!',
+    perMonthUnlimited: 'por mês, usos ilimitados'
+  },
+  en: {
+    upgradeYourPlan: 'Upgrade Your Plan',
+    currentPlan: 'Current Plan',
+    unlimitedPlan: 'Unlimited Plan',
+    unlimitedUses: 'Unlimited uses',
+    unlimitedUsesRemaining: 'Unlimited uses remaining',
+    unlimitedUsesUntil: 'Unlimited uses until',
+    manage: 'Manage',
+    cancel: 'Cancel',
+    manageSubscription: 'Manage Subscription',
+    cancelSubscription: 'Cancel Subscription',
+    bestValue: 'Best Value',
+    perfectForRegularUsers: 'Perfect for regular users',
+    perfectForStudents: 'Perfect for students & professionals',
+    perfectForHeavyUsers: 'Perfect for heavy users',
+    pdfAndImageSupport: 'PDF and image support',
+    aiPoweredSummaries: 'AI-powered summaries',
+    allFeaturesIncluded: 'All features included',
+    greatValueForMoney: 'Great value for money',
+    bulkUsageDiscount: 'Bulk usage at discounted rate',
+    unlimitedDocumentProcessing: 'Unlimited document processing',
+    cancelAnytime: 'Cancel anytime',
+    buyNow: 'Buy Now',
+    upgradeNow: 'Upgrade Now',
+    subscribeNow: 'Subscribe Now',
+    processing: 'Processing...',
+    or: 'OR',
+    buyIndividualUses: 'Buy Individual Uses',
+    needJustFewUses: 'Need just a few uses? Get {uses} uses for R$ {price} - perfect for quick tasks!',
+    buyUsesButton: 'Buy {uses} Uses - R$ {price}',
+    securePayment: '💳 Secure payment processed by Stripe',
+    dataProtection: '🔒 Your data is safe and encrypted',
+    perMonth: 'per month',
+    additionalUses: 'additional uses',
+    usesGreatValue: 'uses - great value!',
+    perMonthUnlimited: 'per month, unlimited uses'
+  }
+}
+
 interface PricingModalProps {
   isOpen: boolean
   onClose: () => void
@@ -13,6 +91,7 @@ interface PricingModalProps {
     plan_type: string
   }
   onPaymentSuccess?: () => void
+  language?: 'pt' | 'en'
 }
 
 interface SubscriptionStatus {
@@ -22,10 +101,13 @@ interface SubscriptionStatus {
   cancel_at: string | null
 }
 
-export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentSuccess }: PricingModalProps) {
+export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentSuccess, language = 'pt' }: PricingModalProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null)
   const [fetchingStatus, setFetchingStatus] = useState(false)
+  
+  // Get translations for current language
+  const t = translations[language]
 
   // Fetch subscription status when modal opens and user has unlimited plan
   useEffect(() => {
@@ -222,7 +304,7 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold text-white">Upgrade Your Plan</h2>
+          <h2 className="text-3xl font-bold text-white">{t.upgradeYourPlan}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"
@@ -238,12 +320,12 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white font-medium">
-                      Current Plan: <span className="text-purple-400">Unlimited Plan</span>
+                      {t.currentPlan}: <span className="text-purple-400">{t.unlimitedPlan}</span>
                     </p>
                     <p className="text-gray-400">
                       {subscriptionStatus?.is_cancelled 
-                        ? `Unlimited uses until ${formatDate(subscriptionStatus.current_period_end)}`
-                        : 'Unlimited uses remaining'
+                        ? `${t.unlimitedUsesUntil} ${formatDate(subscriptionStatus.current_period_end)}`
+                        : t.unlimitedUsesRemaining
                       }
                     </p>
                   </div>
@@ -263,8 +345,8 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
                       } text-white rounded-lg font-medium transition-colors text-sm`}
                     >
                       {subscriptionStatus?.is_cancelled 
-                        ? 'Already Cancelled' 
-                        : 'Cancel Subscription'
+                        ? t.cancel 
+                        : t.cancelSubscription
                       }
                     </button>
                   </div>
@@ -296,29 +378,29 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
             
             <div className="mb-6">
               <div className="text-3xl font-bold text-white mb-2">
-                ${PRICING_PLANS.starter.price}
+                R$ {PRICING_PLANS.starter.price}
               </div>
               <div className="text-gray-400">
-                {PRICING_PLANS.starter.uses} additional uses
+                {PRICING_PLANS.starter.uses} {t.additionalUses}
               </div>
             </div>
 
             <ul className="space-y-2 mb-6">
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                Perfect for regular users
+                {t.perfectForRegularUsers}
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                PDF and image support
+                {t.pdfAndImageSupport}
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                AI-powered summaries
+                {t.aiPoweredSummaries}
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                Great value for money
+                {t.greatValueForMoney}
               </li>
             </ul>
 
@@ -327,14 +409,14 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
               disabled={loading === 'starter'}
               className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
             >
-              {loading === 'starter' ? 'Processing...' : 'Buy Now'}
+              {loading === 'starter' ? t.processing : t.buyNow}
             </button>
           </div>
 
           {/* Pro Plan */}
           <div className="bg-gray-800/50 rounded-xl p-6 border border-yellow-500/50 relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-3 py-1 rounded-full text-sm font-medium">
-              Best Value
+              {t.bestValue}
             </div>
             
             <div className="flex items-center gap-3 mb-4">
@@ -349,25 +431,25 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
             
             <div className="mb-6">
               <div className="text-3xl font-bold text-white mb-2">
-                ${PRICING_PLANS.pro.price}
+                R$ {PRICING_PLANS.pro.price}
               </div>
               <div className="text-gray-400">
-                {PRICING_PLANS.pro.uses} uses - great value!
+                {PRICING_PLANS.pro.uses} {t.usesGreatValue}
               </div>
             </div>
 
             <ul className="space-y-2 mb-6">
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                Perfect for students & professionals
+                {t.perfectForStudents}
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                Bulk usage at discounted rate
+                {t.bulkUsageDiscount}
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                All features included
+                {t.allFeaturesIncluded}
               </li>
             </ul>
 
@@ -376,7 +458,7 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
               disabled={loading === 'pro'}
               className="w-full py-3 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
             >
-              {loading === 'pro' ? 'Processing...' : 'Upgrade Now'}
+              {loading === 'pro' ? t.processing : t.upgradeNow}
             </button>
           </div>
 
@@ -394,25 +476,25 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
             
             <div className="mb-6">
               <div className="text-3xl font-bold text-white mb-2">
-                ${PRICING_PLANS.unlimited.price}
+                R$ {PRICING_PLANS.unlimited.price}
               </div>
               <div className="text-gray-400">
-                per month, unlimited uses
+                por mês, usos ilimitados
               </div>
             </div>
 
             <ul className="space-y-2 mb-6">
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                Unlimited document processing
+                {t.unlimitedDocumentProcessing}
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                Perfect for heavy users
+                {t.perfectForHeavyUsers}
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Check size={16} className="text-green-400" />
-                Cancel anytime
+                {t.cancelAnytime}
               </li>
             </ul>
 
@@ -421,7 +503,7 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
               disabled={loading === 'unlimited'}
               className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
             >
-              {loading === 'unlimited' ? 'Processing...' : 'Subscribe Now'}
+              {loading === 'unlimited' ? t.processing : t.subscribeNow}
             </button>
           </div>
         </div>
@@ -430,7 +512,7 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
         <div className="mt-8 text-center">
           <div className="flex items-center justify-center mb-4">
             <div className="flex-1 border-t border-gray-600"></div>
-            <span className="px-4 text-gray-400 text-sm font-medium">OR</span>
+            <span className="px-4 text-gray-400 text-sm font-medium">{t.or}</span>
             <div className="flex-1 border-t border-gray-600"></div>
           </div>
           
@@ -439,11 +521,11 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
               <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
                 <Zap className="text-green-400" size={16} />
               </div>
-              <h3 className="text-lg font-bold text-white">Buy Individual Uses</h3>
+              <h3 className="text-lg font-bold text-white">{t.buyIndividualUses}</h3>
             </div>
             
             <p className="text-gray-400 text-sm mb-4">
-              Need just a few uses? Get {PRICING_PLANS.individual.uses} uses for ${PRICING_PLANS.individual.price} - perfect for quick tasks!
+              {t.needJustFewUses.replace('{uses}', PRICING_PLANS.individual.uses.toString()).replace('{price}', PRICING_PLANS.individual.price.toString())}
             </p>
             
             <button
@@ -451,14 +533,14 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
               disabled={loading === 'individual'}
               className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
-              {loading === 'individual' ? 'Processing...' : `Buy ${PRICING_PLANS.individual.uses} Uses - $${PRICING_PLANS.individual.price}`}
+              {loading === 'individual' ? t.processing : t.buyUsesButton.replace('{uses}', PRICING_PLANS.individual.uses.toString()).replace('{price}', PRICING_PLANS.individual.price.toString())}
             </button>
           </div>
         </div>
 
         <div className="mt-8 text-center text-gray-400 text-sm">
-          <p>💳 Secure payment processed by Stripe</p>
-          <p>🔒 Your data is safe and encrypted</p>
+          <p>{t.securePayment}</p>
+          <p>{t.dataProtection}</p>
         </div>
       </div>
     </div>

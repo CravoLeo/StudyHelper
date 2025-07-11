@@ -1,27 +1,109 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Loader2, FileText, Eye, EyeOff, CheckCircle, XCircle, User } from 'lucide-react'
 
 interface TextExtractionProps {
   file: File
   onTextExtracted: (text: string) => void
   demoMode?: boolean
+  language?: 'pt' | 'en'
 }
 
-export default function TextExtraction({ file, onTextExtracted, demoMode = false }: TextExtractionProps) {
+const translations = {
+  pt: {
+    extractingText: 'Extraindo texto do seu documento',
+    readingPdf: 'Lendo conteúdo do PDF...',
+    runningOcr: 'Executando análise OCR...',
+    ocrProcessing: 'Processamento OCR de imagem pode levar até 60 segundos',
+    readingPdfStructure: 'Lendo estrutura do PDF',
+    extractingTextContent: 'Extraindo conteúdo do texto',
+    runningOcrImage: 'Executando OCR na imagem',
+    recognizingText: 'Reconhecendo caracteres de texto',
+    preparingAi: 'Preparando para análise de IA',
+    signInRequired: 'Login necessário',
+    usageLimitReached: 'Limite de uso atingido',
+    extractionFailed: 'Falha na extração',
+    signInRequiredDesc: 'Recursos reais de IA requerem uma conta. Experimente nosso modo demo para ver como funciona primeiro!',
+    tryDemoMode: 'Experimentar Modo Demo',
+    upgradeDesc: '🚀 Atualize seu plano para continuar processando documentos com resumos e questões de estudo alimentados por IA.',
+    viewPricingPlans: 'Ver Planos de Preços',
+    backToHome: 'Voltar ao Início',
+    textExtracted: 'Texto extraído com sucesso',
+    charactersExtracted: 'caracteres extraídos',
+    readyForAi: 'Pronto para análise de IA',
+    showFullText: 'Mostrar texto completo',
+    showLess: 'Mostrar menos',
+    extractedText: 'Texto Extraído',
+    continueToAi: 'Continuar para IA →'
+  },
+  en: {
+    extractingText: 'Extracting text from your document',
+    readingPdf: 'Reading PDF content...',
+    runningOcr: 'Running OCR analysis...',
+    ocrProcessing: 'Image OCR processing may take up to 60 seconds',
+    readingPdfStructure: 'Reading PDF structure',
+    extractingTextContent: 'Extracting text content',
+    runningOcrImage: 'Running OCR on image',
+    recognizingText: 'Recognizing text characters',
+    preparingAi: 'Preparing for AI analysis',
+    signInRequired: 'Sign in required',
+    usageLimitReached: 'Usage limit reached',
+    extractionFailed: 'Extraction failed',
+    signInRequiredDesc: 'Real AI features require an account. Try our demo mode to see how it works first!',
+    tryDemoMode: 'Try Demo Mode',
+    upgradeDesc: '🚀 Upgrade your plan to continue processing documents with AI-powered summaries and study questions.',
+    viewPricingPlans: 'View Pricing Plans',
+    backToHome: 'Back to Home',
+    textExtracted: 'Text extracted successfully',
+    charactersExtracted: 'characters extracted',
+    readyForAi: 'Ready for AI analysis',
+    showFullText: 'Show full text',
+    showLess: 'Show less',
+    extractedText: 'Extracted Text',
+    continueToAi: 'Continue to AI →'
+  }
+}
+
+export default function TextExtraction({ file, onTextExtracted, demoMode = false, language = 'pt' }: TextExtractionProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [extractedText, setExtractedText] = useState('')
   const [error, setError] = useState('')
   const [showFullText, setShowFullText] = useState(false)
+  const t = translations[language]
+
+  // Prevent duplicate processing
+  const hasProcessedRef = useRef(false)
+  const lastFileRef = useRef<File | null>(null)
+  
+  // Generate unique ID for this component
+  const componentId = useRef(Math.random().toString(36).substring(7))
+  
+  console.log(`📄 [${componentId.current}] TextExtraction render - File: ${file.name}, Size: ${file.size}, HasProcessed: ${hasProcessedRef.current}`)
 
   useEffect(() => {
+    // Check if we've already processed this exact file
+    if (hasProcessedRef.current && lastFileRef.current === file) {
+      console.log(`🚫 [${componentId.current}] Already processed this file, skipping`)
+      return
+    }
+    
+    // Reset processing flag if file changed
+    if (lastFileRef.current !== file) {
+      hasProcessedRef.current = false
+      console.log(`📄 [${componentId.current}] File changed - reset processing flag`)
+    }
+    
+    console.log(`📄 [${componentId.current}] Processing file: ${file.name}`)
+    hasProcessedRef.current = true
+    lastFileRef.current = file
+    
     const extractText = async () => {
       setIsLoading(true)
       setError('')
 
       try {
-        console.log('📤 Sending file to API:', {
+        console.log(`📤 [${componentId.current}] Sending file to API:`, {
           name: file.name,
           type: file.type,
           size: file.size
@@ -36,11 +118,11 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
           body: formData
         })
 
-        console.log('📥 API Response status:', response.status)
+        console.log(`📥 [${componentId.current}] API Response status:`, response.status)
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          console.error('❌ API Error:', errorData)
+          console.error(`❌ [${componentId.current}] API Error:`, errorData)
           
           // Check if this is an authentication error
           if (response.status === 401 && errorData.needsAuth) {
@@ -52,7 +134,7 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
         }
 
         const data = await response.json()
-        console.log('✅ Extraction successful:', {
+        console.log(`✅ [${componentId.current}] Extraction successful:`, {
           textLength: data.text?.length || 0,
           preview: data.text?.substring(0, 100) + '...'
         })
@@ -64,12 +146,12 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
           // Refresh usage after successful extraction (only in real mode)
         const refreshEvent = new CustomEvent('refreshUsage')
         window.dispatchEvent(refreshEvent)
-          console.log('🔄 Usage refresh event dispatched after text extraction')
+          console.log(`🔄 [${componentId.current}] Usage refresh event dispatched after text extraction`)
         } else {
-          console.log('🎭 Demo mode - no usage consumed for text extraction')
+          console.log(`🎭 [${componentId.current}] Demo mode - no usage consumed for text extraction`)
         }
       } catch (err) {
-        console.error('❌ Text extraction failed:', err)
+        console.error(`❌ [${componentId.current}] Text extraction failed:`, err)
         setError(err instanceof Error ? err.message : 'Failed to extract text')
       } finally {
         setIsLoading(false)
@@ -77,7 +159,7 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
     }
 
     extractText()
-  }, [file, onTextExtracted])
+  }, [file, onTextExtracted, demoMode]) // Removed 't' dependency to prevent duplicate API calls
 
   if (isLoading) {
     return (
@@ -92,14 +174,14 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              Extracting text from your document
+              {t.extractingText}
             </h3>
             <p className="text-gray-400 text-lg">
-              {file.type === 'application/pdf' ? 'Reading PDF content...' : 'Running OCR analysis...'}
+              {file.type === 'application/pdf' ? t.readingPdf : t.runningOcr}
             </p>
             {file.type.startsWith('image/') && (
               <p className="text-gray-500 text-sm mt-2">
-                Image OCR processing may take up to 60 seconds
+                {t.ocrProcessing}
               </p>
             )}
           </div>
@@ -110,21 +192,21 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span>
                   {file.type === 'application/pdf' 
-                    ? 'Reading PDF structure' 
-                    : 'Running OCR on image'}
+                    ? t.readingPdfStructure 
+                    : t.runningOcrImage}
                 </span>
               </div>
               <div className="flex items-center space-x-3 text-sm text-gray-300">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
                 <span>
                   {file.type === 'application/pdf' 
-                    ? 'Extracting text content' 
-                    : 'Recognizing text characters'}
+                    ? t.extractingTextContent 
+                    : t.recognizingText}
                 </span>
               </div>
               <div className="flex items-center space-x-3 text-sm text-gray-300">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
-                <span>Preparing for AI analysis</span>
+                <span>{t.preparingAi}</span>
               </div>
             </div>
           </div>
@@ -151,11 +233,11 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {needsAuth ? 'Sign in required' : isUsageLimitError ? 'Usage limit reached' : 'Extraction failed'}
+              {needsAuth ? t.signInRequired : isUsageLimitError ? t.usageLimitReached : t.extractionFailed}
             </h3>
             <p className="text-gray-400 text-lg max-w-md">
               {needsAuth 
-                ? 'Real AI features require an account. Try our demo mode to see how it works first!'
+                ? t.signInRequiredDesc
                 : error
               }
             </p>
@@ -165,7 +247,7 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
             <div className="bg-blue-500/10 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30 max-w-md">
               <div className="text-center space-y-4">
                 <p className="text-blue-300 text-sm">
-                  🚀 For real AI features, please sign in using the button in the top-right corner. Or try our free demo mode to see how it works!
+                  {t.signInRequiredDesc}
                 </p>
                 <button
                   onClick={() => {
@@ -174,7 +256,7 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
                   }}
                   className="px-8 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors text-lg"
                 >
-                  Try Demo Mode
+                  {t.tryDemoMode}
                 </button>
               </div>
             </div>
@@ -182,7 +264,7 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
             <div className="bg-yellow-500/10 backdrop-blur-sm rounded-xl p-6 border border-yellow-500/30 max-w-md">
               <div className="text-center space-y-4">
                 <p className="text-yellow-300 text-sm">
-                  🚀 Upgrade your plan to continue processing documents with AI-powered summaries and study questions.
+                  {t.upgradeDesc}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button
@@ -193,39 +275,30 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
                     }}
                     className="px-6 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors"
                   >
-                    View Pricing Plans
+                    {t.viewPricingPlans}
                   </button>
                   <button
                     onClick={() => window.location.href = '/'}
                     className="px-6 py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
                   >
-                    Start Over
+                    {t.backToHome}
                   </button>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="bg-red-500/10 backdrop-blur-sm rounded-xl p-4 border border-red-500/30">
-              <p className="text-red-300 text-sm">
-                Please try uploading a different file or check if your file is corrupted.
-              </p>
-            </div>
-          )}
-          
-          {!isUsageLimitError && !needsAuth && (
-            <div className="flex gap-3">
-              <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors"
-              >
-                Try Again
-              </button>
-              <button
-                onClick={() => window.location.href = '/'}
-                className="px-6 py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
-              >
-                Start Over
-              </button>
+            <div className="bg-red-500/10 backdrop-blur-sm rounded-xl p-6 border border-red-500/30 max-w-md">
+              <div className="text-center space-y-4">
+                <p className="text-red-300 text-sm">
+                  {error}
+                </p>
+                <button
+                  onClick={() => window.location.href = '/'}
+                  className="px-8 py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                >
+                  {t.backToHome}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -233,62 +306,86 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
     )
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-green-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-green-500/30">
-            <CheckCircle size={24} className="text-green-400" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold text-white">
-              Text extracted successfully
-            </h3>
-            <p className="text-gray-400">
-              {extractedText.length.toLocaleString()} characters extracted from {file.name}
-            </p>
+  if (extractedText) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-green-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-green-500/30">
+              <CheckCircle size={24} className="text-green-400" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-white">
+                {t.textExtracted}
+              </h3>
+              <p className="text-gray-400">
+                {extractedText.length.toLocaleString()} {t.charactersExtracted}
+              </p>
+            </div>
           </div>
         </div>
-        
-        <button
-          onClick={() => setShowFullText(!showFullText)}
-          className="flex items-center space-x-2 px-4 py-2 bg-gray-800/80 backdrop-blur-sm text-green-400 rounded-xl hover:bg-gray-700/80 transition-colors duration-200 border border-gray-600"
-        >
-          {showFullText ? <EyeOff size={18} /> : <Eye size={18} />}
-          <span className="font-medium">
-            {showFullText ? 'Hide' : 'Show'} full text
-          </span>
-        </button>
-      </div>
 
-      {showFullText && (
+        <div className="bg-green-500/10 backdrop-blur-sm rounded-xl p-4 border border-green-500/30">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+              <CheckCircle size={16} className="text-white" />
+            </div>
+            <div>
+              <p className="text-green-200 font-medium">{t.readyForAi}</p>
+              <p className="text-green-300/80 text-sm">
+                {language === 'pt' ? 'Prosseguindo para gerar resumo e questões de estudo' : 'Proceeding to generate summary and study questions'}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-white">Extracted Text</h4>
-            <span className="text-sm text-gray-400">
-              {extractedText.length.toLocaleString()} characters
-            </span>
+            <h4 className="text-lg font-bold text-white">{t.extractedText}</h4>
+            <button
+              onClick={() => setShowFullText(!showFullText)}
+              className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+            >
+              {showFullText ? <EyeOff size={16} /> : <Eye size={16} />}
+              <span className="text-sm">{showFullText ? t.showLess : t.showFullText}</span>
+            </button>
           </div>
-          <div className="max-h-96 overflow-y-auto">
-            <pre className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
-              {extractedText}
-            </pre>
-          </div>
-        </div>
-      )}
-      
-      <div className="bg-green-500/10 backdrop-blur-sm rounded-xl p-4 border border-green-500/30">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-            <CheckCircle size={16} className="text-white" />
-          </div>
-          <div>
-            <p className="text-green-200 font-medium">Ready for AI processing</p>
-            <p className="text-green-300/80 text-sm">
-              The text has been successfully extracted and is ready for summary and question generation.
+          
+          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+            <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+              {showFullText ? extractedText : extractedText.substring(0, 500) + '...'}
             </p>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-4">
+        <div className="w-12 h-12 bg-green-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-green-400/30">
+          <CheckCircle className="h-6 w-6 text-green-400" />
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold text-white">
+            {t.textExtracted}
+          </h3>
+          <p className="text-white/60 text-sm">{t.readyForAi}</p>
+        </div>
+      </div>
+
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
+        <p className="text-white/90 leading-relaxed line-clamp-6">{extractedText}</p>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={() => onTextExtracted(extractedText)}
+          className="px-8 py-3 bg-white text-gray-900 rounded-xl font-semibold hover:bg-white/90 transition-all duration-200 transform hover:scale-105 shadow-lg"
+        >
+          {t.continueToAi}
+        </button>
       </div>
     </div>
   )

@@ -8,9 +8,189 @@ import AIGeneration from '@/components/AIGeneration'
 import PricingModal from '@/components/PricingModal'
 import NextStepsModal from '@/components/NextStepsModal'
 import MaintenanceMode from '@/components/MaintenanceMode'
-import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket } from 'lucide-react'
+import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket, Globe } from 'lucide-react'
 import { SavedDocument, isLocalMode } from '@/lib/supabase'
 import { saveDocument, getDocuments, deleteDocument, UserUsage } from '@/lib/database'
+
+// Language translations
+const translations = {
+  pt: {
+    // Navigation
+    features: 'Recursos',
+    history: 'Histórico',
+    manageplan: 'Gerenciar Plano',
+    upgrade: 'Atualizar',
+    whatsnext: 'O que vem a seguir?',
+    signin: 'Entrar',
+    unlimited: 'Ilimitado',
+    unlimitedPlan: 'Plano Ilimitado',
+    uses: 'usos',
+    usesLeft: 'restantes',
+    
+    // Status messages
+    localMode: 'Modo Local: Documentos salvos apenas no navegador',
+    cloudMode: 'Modo Nuvem: Documentos salvos com segurança',
+    
+    // Hero section
+    heroTitle: 'Transforme Documentos em',
+    heroSubtitle: 'Materiais de Estudo',
+    heroTagline: '100% Automático e Seguro',
+    heroDescription: 'Carregue PDFs ou imagens e obtenha resumos e questões de estudo com IA em segundos. Nenhum trabalho manual necessário.',
+    
+    // Mode toggle
+    demoMode: '🎭 MODO DEMO',
+    openaiMode: '🚀 MODO OPENAI',
+    demoModeDesc: 'Gratuito • Usa dados simulados',
+    openaiModeDesc: 'Usa créditos • IA real',
+    
+    // Actions
+    startNewDocument: 'Iniciar Novo Documento',
+    
+    // Progress steps
+    upload: 'Carregar',
+    extract: 'Extrair',
+    generate: 'Gerar',
+    export: 'Exportar',
+    
+    // Features section
+    featuresTitle: 'Aumente a criatividade - e a eficiência!',
+    featuresSubtitle: 'Seja para criar materiais de estudo para provas ou processar artigos de pesquisa instantaneamente, o StudyHelper torna isso possível.',
+    
+    aiPoweredTitle: 'Movido por IA',
+    aiPoweredDesc: 'IA avançada analisa seus documentos e cria resumos abrangentes e questões de estudo',
+    
+    multipleFormatsTitle: 'Múltiplos Formatos',
+    multipleFormatsDesc: 'Funciona com PDFs, imagens e vários tipos de documento. Carregue e obtenha resultados instantaneamente',
+    
+    exportReadyTitle: 'Pronto para Exportar',
+    exportReadyDesc: 'Exporte seus materiais de estudo como arquivos de texto ou PDFs. Perfeito para compartilhar e imprimir',
+    
+    // Trust indicators
+    trustedBy: 'Confiado por estudantes de',
+    universities: 'Universidades',
+    highSchools: 'Escolas Secundárias',
+    researchLabs: 'Laboratórios de Pesquisa',
+    studyGroups: 'Grupos de Estudo',
+    
+    // Edit section
+    demoModeActive: 'Modo Demo Ativo',
+    demoModeContent: 'Este conteúdo foi gerado usando dados simulados',
+    summary: 'Resumo',
+    studyQuestions: 'Questões de Estudo',
+    summaryPlaceholder: 'Resumo gerado por IA aparecerá aqui...',
+    addQuestion: 'Adicionar questão',
+    removeQuestion: 'Remover questão',
+    
+    // Actions
+    saveDocument: 'Salvar Documento',
+    exportAsTxt: 'Exportar como TXT',
+    exportAsPdf: 'Exportar como PDF',
+    
+    // Export notifications
+    exportingTxt: 'Exportando arquivo de texto...',
+    exportingPdf: 'Exportando arquivo PDF...',
+    
+    // History modal
+    savedDocuments: 'Documentos Salvos',
+    noDocuments: 'Nenhum documento salvo ainda',
+    close: 'Fechar',
+    view: 'Visualizar',
+    delete: 'Excluir',
+    
+    // Language switcher
+    language: 'Idioma',
+    portuguese: 'Português',
+    english: 'English'
+  },
+  en: {
+    // Navigation
+    features: 'Features',
+    history: 'History',
+    manageplan: 'Manage Plan',
+    upgrade: 'Upgrade',
+    whatsnext: 'What\'s Next?',
+    signin: 'Sign In',
+    unlimited: 'Unlimited',
+    unlimitedPlan: 'Unlimited Plan',
+    uses: 'uses',
+    usesLeft: 'left',
+    
+    // Status messages
+    localMode: 'Local Mode: Documents saved to browser only',
+    cloudMode: 'Cloud Mode: Documents securely saved',
+    
+    // Hero section
+    heroTitle: 'Turn Documents into',
+    heroSubtitle: 'Study Materials',
+    heroTagline: '100% Automatic & Secure',
+    heroDescription: 'Upload PDFs or images and get AI-powered summaries and study questions in seconds. No manual work required.',
+    
+    // Mode toggle
+    demoMode: '🎭 DEMO MODE',
+    openaiMode: '🚀 OPENAI MODE',
+    demoModeDesc: 'Free • Uses mock data',
+    openaiModeDesc: 'Uses credits • Real AI',
+    
+    // Actions
+    startNewDocument: 'Start New Document',
+    
+    // Progress steps
+    upload: 'Upload',
+    extract: 'Extract',
+    generate: 'Generate',
+    export: 'Export',
+    
+    // Features section
+    featuresTitle: 'Boost creativity – and efficiency!',
+    featuresSubtitle: 'Whether you want to create study materials for exams or process research papers instantly, StudyHelper makes it possible.',
+    
+    aiPoweredTitle: 'AI-Powered',
+    aiPoweredDesc: 'Advanced AI analyzes your documents and creates comprehensive summaries and study questions',
+    
+    multipleFormatsTitle: 'Multiple Formats',
+    multipleFormatsDesc: 'Works with PDFs, images, and various document types. Upload and get results instantly',
+    
+    exportReadyTitle: 'Export Ready',
+    exportReadyDesc: 'Export your study materials as text files or PDFs. Perfect for sharing and printing',
+    
+    // Trust indicators
+    trustedBy: 'Trusted by students at',
+    universities: 'Universities',
+    highSchools: 'High Schools',
+    researchLabs: 'Research Labs',
+    studyGroups: 'Study Groups',
+    
+    // Edit section
+    demoModeActive: 'Demo Mode Active',
+    demoModeContent: 'This content was generated using mock data',
+    summary: 'Summary',
+    studyQuestions: 'Study Questions',
+    summaryPlaceholder: 'AI-generated summary will appear here...',
+    addQuestion: 'Add question',
+    removeQuestion: 'Remove question',
+    
+    // Actions
+    saveDocument: 'Save Document',
+    exportAsTxt: 'Export as TXT',
+    exportAsPdf: 'Export as PDF',
+    
+    // Export notifications
+    exportingTxt: 'Exporting text file...',
+    exportingPdf: 'Exporting PDF file...',
+    
+    // History modal
+    savedDocuments: 'Saved Documents',
+    noDocuments: 'No saved documents yet',
+    close: 'Close',
+    view: 'View',
+    delete: 'Delete',
+    
+    // Language switcher
+    language: 'Language',
+    portuguese: 'Português',
+    english: 'English'
+  }
+}
 
 export default function Home() {
   const { user, isSignedIn, isLoaded } = useUser()
@@ -41,6 +221,10 @@ export default function Home() {
   const [showNextStepsModal, setShowNextStepsModal] = useState(false)
   const [usageLoading, setUsageLoading] = useState(false)
   const [showStatusMessage, setShowStatusMessage] = useState(true)
+  
+  // Language state
+  const [language, setLanguage] = useState<'pt' | 'en'>('pt') // Default to Portuguese
+  const t = translations[language]
 
   // Simplified maintenance mode check - only run on client
   useEffect(() => {
@@ -95,6 +279,7 @@ export default function Home() {
   }, [])
 
   const handleTextExtracted = useCallback((text: string) => {
+    console.log(`📝 handleTextExtracted called with ${text.length} characters`)
     setExtractedText(text)
     setCurrentStep('generate')
   }, [])
@@ -503,6 +688,7 @@ export default function Home() {
     <div className="min-h-screen bg-black">
       {/* Top Navigation */}
       <nav className="relative z-10 flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+        {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-black" />
@@ -510,101 +696,85 @@ export default function Home() {
           <span className="text-xl font-bold text-white">StudyHelper</span>
         </div>
         
-        {/* Navigation Links */}
+        {/* Center Navigation Links */}
         <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
           <button 
             onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
             className="hover:text-white transition-colors"
           >
-            Features
+            {t.features}
           </button>
           <button onClick={showHistoryModal} className="hover:text-white transition-colors">
-            History {savedDocuments.length > 0 && (
+            {t.history} {savedDocuments.length > 0 && (
               <span className="ml-1 bg-green-500 text-black px-2 py-1 rounded-full text-xs font-medium">
                 {savedDocuments.length}
               </span>
             )}
           </button>
           
-          {/* Usage Display */}
-          {isSignedIn && userUsage && (
+          {/* Language Switcher */}
+          <button 
+            onClick={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+          >
+            <Globe className="w-4 h-4" />
+            <span className="font-medium">
+              {language === 'pt' ? 'PT' : 'EN'}
+            </span>
+          </button>
+        </div>
+        
+        {/* Right Side - Auth & User Info */}
+        <div className="flex items-center gap-3">
+          {isSignedIn ? (
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 rounded-lg">
-                <Zap className="w-4 h-4 text-green-400" />
-                <span className="text-white font-medium">
-                  {userUsage.uses_remaining === -1 
-                    ? 'Unlimited' 
-                    : `${userUsage.uses_remaining} uses`}
-                </span>
-                {userUsage.plan_type === 'unlimited' && (
-                  <span className="text-xs text-purple-400">
-                    (Unlimited Plan)
+              {/* Usage Display */}
+              {userUsage && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 rounded-lg text-sm">
+                  <Zap className="w-4 h-4 text-green-400" />
+                  <span className="text-white font-medium">
+                    {userUsage.uses_remaining === -1 
+                      ? t.unlimited 
+                      : `${userUsage.uses_remaining} ${t.uses}`}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
               
-              {userUsage.plan_type === 'unlimited' ? (
+              {/* Plan Management Button */}
+              {userUsage && userUsage.plan_type === 'unlimited' ? (
                 <button 
                   onClick={handleManageSubscription}
-                  className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                  className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
                 >
                   <CreditCard className="w-4 h-4" />
-                  Manage Plan
+                  {t.manageplan}
                 </button>
               ) : (
                 <button 
                   onClick={() => setShowPricingModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium"
+                  className="flex items-center gap-2 px-3 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium text-sm"
                 >
                   <CreditCard className="w-4 h-4" />
-                  Upgrade
+                  {t.upgrade}
                 </button>
               )}
               
+              {/* What's Next Button */}
               <button 
                 onClick={() => setShowNextStepsModal(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
               >
                 <Rocket className="w-4 h-4" />
-                What's Next?
+                {t.whatsnext}
               </button>
-            </div>
-          )}
-          
-
-        </div>
-        
-        {/* Auth Buttons */}
-        <div className="flex items-center gap-3">
-          {isSignedIn ? (
-            <div className="flex items-center gap-3">
-              {userUsage && userUsage.plan_type === 'unlimited' && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm border border-gray-700">
-                  <span className="font-medium text-purple-400">
-                    Unlimited Plan
-                  </span>
-                </div>
-              )}
+              
+              {/* User Button */}
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm">
                 <UserButton />
                 <div className="hidden sm:block">
                   <div className="text-xs text-gray-300">
                     {user.firstName || user.emailAddresses[0].emailAddress.split('@')[0]}
                   </div>
-                  {userUsage && (
-                    <div className="text-xs">
-                      <span className="text-gray-400">Uses: </span>
-                      {userUsage.uses_remaining !== -1 ? (
-                        <span className="text-gray-300">
-                          {userUsage.uses_remaining} left
-                        </span>
-                      ) : (
-                        <span className="text-green-400">
-                          Unlimited
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -615,11 +785,11 @@ export default function Home() {
                 className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
               >
                 <Rocket className="w-4 h-4" />
-                What's Next?
+                {t.whatsnext}
               </button>
               <SignInButton mode="modal">
                 <button className="px-6 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium text-sm">
-                  Sign In
+                  {t.signin}
                 </button>
               </SignInButton>
             </div>
@@ -634,7 +804,7 @@ export default function Home() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-yellow-400" />
-                <span className="text-yellow-200">Local Mode: Documents saved to browser only</span>
+                <span className="text-yellow-200">{t.localMode}</span>
               </div>
               <button
                 onClick={() => setShowStatusMessage(false)}
@@ -653,7 +823,7 @@ export default function Home() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-400" />
-                <span className="text-green-200">Cloud Mode: Documents securely saved</span>
+                <span className="text-green-200">{t.cloudMode}</span>
               </div>
               <button
                 onClick={() => setShowStatusMessage(false)}
@@ -670,17 +840,16 @@ export default function Home() {
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-16 text-center">
         {/* Main Headline */}
         <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-          Turn Documents into
+          {t.heroTitle}
           <br />
-          <span className="text-green-400">Study Materials</span>
+          <span className="text-green-400">{t.heroSubtitle}</span>
           <br />
-          100% Automatic & Secure
+          {t.heroTagline}
         </h1>
         
         {/* Subheadline */}
         <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-2xl mx-auto">
-          Upload PDFs or images and get AI-powered summaries and study questions in seconds. 
-          No manual work required.
+          {t.heroDescription}
         </p>
 
         {/* Mode Toggle */}
@@ -703,12 +872,12 @@ export default function Home() {
                 <span className={`text-sm font-medium ${
                   demoMode ? 'text-blue-300' : 'text-green-300'
                 }`}>
-                  {demoMode ? '🎭 DEMO MODE' : '🚀 OPENAI MODE'}
+                  {demoMode ? t.demoMode : t.openaiMode}
                 </span>
                 <span className={`text-xs ${
                   demoMode ? 'text-blue-400' : 'text-green-400'
                 }`}>
-                  {demoMode ? 'Free • Uses mock data' : 'Uses credits • Real AI'}
+                  {demoMode ? t.demoModeDesc : t.openaiModeDesc}
                 </span>
               </div>
             </div>
@@ -719,7 +888,7 @@ export default function Home() {
         <div className="mb-16">
           {currentStep === 'upload' && (
             <div className="max-w-xl mx-auto">
-              <FileUpload onFileUpload={handleFileUpload} />
+              <FileUpload onFileUpload={handleFileUpload} language={language} />
             </div>
           )}
           
@@ -728,7 +897,7 @@ export default function Home() {
               onClick={resetApp}
               className="px-12 py-4 bg-green-500 text-black rounded-lg font-semibold text-lg hover:bg-green-400 transition-all duration-200 shadow-lg"
             >
-              Start New Document
+              {t.startNewDocument}
             </button>
           )}
         </div>
@@ -740,7 +909,7 @@ export default function Home() {
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all bg-green-500/20 text-green-300">
                   <Upload size={16} />
-                  <span className="text-sm font-medium">Upload</span>
+                  <span className="text-sm font-medium">{t.upload}</span>
                 </div>
                 <div className="w-6 h-0.5 bg-green-500"></div>
                 <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
@@ -749,7 +918,7 @@ export default function Home() {
                   'bg-gray-800 text-gray-400'
                 }`}>
                   <FileText size={16} />
-                  <span className="text-sm font-medium">Extract</span>
+                  <span className="text-sm font-medium">{t.extract}</span>
                 </div>
                 <div className={`w-6 h-0.5 ${
                   ['generate', 'edit'].includes(currentStep) ? 'bg-green-500' : 'bg-gray-600'
@@ -760,7 +929,7 @@ export default function Home() {
                   'bg-gray-800 text-gray-400'
                 }`}>
                   <Sparkles size={16} />
-                  <span className="text-sm font-medium">Generate</span>
+                  <span className="text-sm font-medium">{t.generate}</span>
                 </div>
                 <div className={`w-6 h-0.5 ${
                   currentStep === 'edit' ? 'bg-green-500' : 'bg-gray-600'
@@ -769,7 +938,7 @@ export default function Home() {
                   currentStep === 'edit' ? 'bg-green-500 text-black' : 'bg-gray-800 text-gray-400'
                 }`}>
                   <Download size={16} />
-                  <span className="text-sm font-medium">Export</span>
+                  <span className="text-sm font-medium">{t.export}</span>
                 </div>
               </div>
             </div>
@@ -784,11 +953,10 @@ export default function Home() {
         <div id="features" className="max-w-5xl mx-auto px-6 py-16">
           <div className="text-center mb-12">
             <h2 className="text-2xl font-bold text-white mb-3">
-              Boost creativity – and efficiency!
+              {t.featuresTitle}
             </h2>
             <p className="text-gray-400 text-lg">
-              Whether you want to create study materials for exams or process research papers instantly, 
-              StudyHelper makes it possible.
+              {t.featuresSubtitle}
             </p>
           </div>
           
@@ -797,9 +965,11 @@ export default function Home() {
               <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-8 h-8 text-green-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">AI-Powered</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                {t.aiPoweredTitle}
+              </h3>
               <p className="text-gray-400 text-sm">
-                Advanced AI analyzes your documents and creates comprehensive summaries and study questions
+                {t.aiPoweredDesc}
               </p>
             </div>
             
@@ -807,9 +977,11 @@ export default function Home() {
               <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <FileText className="w-8 h-8 text-green-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Multiple Formats</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                {t.multipleFormatsTitle}
+              </h3>
               <p className="text-gray-400 text-sm">
-                Works with PDFs, images, and various document types. Upload and get results instantly
+                {t.multipleFormatsDesc}
               </p>
             </div>
             
@@ -817,9 +989,11 @@ export default function Home() {
               <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Download className="w-8 h-8 text-green-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Export Ready</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                {t.exportReadyTitle}
+              </h3>
               <p className="text-gray-400 text-sm">
-                Export your study materials as text files or PDFs. Perfect for sharing and printing
+                {t.exportReadyDesc}
               </p>
             </div>
           </div>
@@ -830,15 +1004,17 @@ export default function Home() {
       {currentStep === 'upload' && (
         <div className="max-w-5xl mx-auto px-6 pb-16">
           <div className="text-center">
-            <p className="text-gray-500 text-xs mb-3 uppercase tracking-wide">Trusted by students at</p>
+            <p className="text-gray-500 text-xs mb-3 uppercase tracking-wide">
+              {t.trustedBy}
+            </p>
             <div className="flex justify-center items-center gap-6 text-gray-600 text-sm">
-              <span>Universities</span>
+              <span>{t.universities}</span>
               <span>•</span>
-              <span>High Schools</span>
+              <span>{t.highSchools}</span>
               <span>•</span>
-              <span>Research Labs</span>
+              <span>{t.researchLabs}</span>
               <span>•</span>
-              <span>Study Groups</span>
+              <span>{t.studyGroups}</span>
             </div>
           </div>
         </div>
@@ -854,6 +1030,7 @@ export default function Home() {
                 file={uploadedFile} 
                 onTextExtracted={handleTextExtracted}
                 demoMode={demoMode}
+                language={language}
               />
             </div>
           )}
@@ -864,6 +1041,7 @@ export default function Home() {
                 text={extractedText} 
                 onAIGenerated={handleAIGenerated}
                 demoMode={demoMode}
+                language={language}
               />
             </div>
           )}
@@ -875,25 +1053,25 @@ export default function Home() {
                   <div className="flex items-center gap-2">
                     <span className="text-lg">🎭</span>
                     <div>
-                      <p className="text-yellow-200 font-medium text-sm">Demo Mode Active</p>
-                      <p className="text-yellow-300/80 text-xs">This content was generated using mock data</p>
+                      <p className="text-yellow-200 font-medium text-sm">{t.demoModeActive}</p>
+                      <p className="text-yellow-300/80 text-xs">{t.demoModeContent}</p>
                     </div>
                   </div>
                 </div>
               )}
               
               <div className="bg-white rounded-lg p-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-800">Summary</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-800">{t.summary}</h3>
                 <textarea
                   value={summary}
                   onChange={handleSummaryChange}
                   className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                  placeholder="AI-generated summary will appear here..."
+                  placeholder={t.summaryPlaceholder}
                 />
               </div>
 
               <div className="bg-white rounded-lg p-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-800">Study Questions</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-800">{t.studyQuestions}</h3>
                 <div className="space-y-3">
                   {questions.map((question, index) => (
                     <div key={index} className="p-3 bg-gray-50 rounded-lg">
@@ -927,21 +1105,21 @@ export default function Home() {
                       className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors text-sm"
                     >
                       <Save size={16} />
-                      Save
+                      {t.saveDocument}
                     </button>
                     <button 
                       onClick={exportAsText}
                       disabled={isExporting}
                       className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
                     >
-                      {isExporting ? 'Exporting...' : 'Export TXT'}
+                      {isExporting ? t.exportingTxt : t.exportAsTxt}
                     </button>
                     <button 
                       onClick={exportAsPDF}
                       disabled={isExporting}
                       className="px-6 py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 text-sm"
                     >
-                      {isExporting ? 'Exporting...' : 'Export PDF'}
+                      {isExporting ? t.exportingPdf : t.exportAsPdf}
                     </button>
                   </div>
                 </div>
@@ -954,10 +1132,12 @@ export default function Home() {
       {/* Save Success Notification */}
       {showSaveSuccess && (
         <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg">
-          <div className="flex items-center gap-2 text-sm">
-            <Save size={16} />
-            <span>Document saved successfully!</span>
-          </div>
+                      <div className="flex items-center gap-2 text-sm">
+              <Save size={16} />
+              <span>
+                {language === 'pt' ? 'Documento salvo com sucesso!' : 'Document saved successfully!'}
+              </span>
+            </div>
         </div>
       )}
       
@@ -967,7 +1147,7 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Document History</h2>
+                <h2 className="text-xl font-bold text-gray-800">{t.savedDocuments}</h2>
                 <button
                   onClick={hideHistoryModal}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -975,17 +1155,19 @@ export default function Home() {
                   <XCircle size={20} className="text-gray-600" />
                 </button>
               </div>
-              <p className="text-gray-600 text-sm mt-1">
-                {savedDocuments.length} documents saved
-              </p>
+                              <p className="text-gray-600 text-sm mt-1">
+                  {savedDocuments.length} {language === 'pt' ? 'documentos salvos' : 'saved documents'}
+                </p>
             </div>
             
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               {savedDocuments.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText size={40} className="text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No saved documents yet</p>
-                  <p className="text-gray-400 text-sm mt-1">Process and save your first document to see it here</p>
+                                      <p className="text-gray-500">{t.noDocuments}</p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      {language === 'pt' ? 'Processe e salve seu primeiro documento para vê-lo aqui' : 'Process and save your first document to see it here'}
+                    </p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1000,11 +1182,11 @@ export default function Home() {
                           <div className="flex items-center gap-3 text-xs text-gray-500">
                             <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                             <span>•</span>
-                            <span>{doc.questions.length} questions</span>
+                            <span>{doc.questions.length} {t.studyQuestions}</span>
                             {doc.demo_mode && (
                               <>
                                 <span>•</span>
-                                <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">Demo</span>
+                                <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">{t.demoMode}</span>
                               </>
                             )}
                           </div>
@@ -1015,14 +1197,14 @@ export default function Home() {
                             className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition-colors"
                           >
                             <Eye size={12} />
-                            Load
+                            {t.view}
                           </button>
                           <button
                             onClick={handleDeleteDocument(doc.id)}
                             className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200 transition-colors"
                           >
                             <Trash2 size={12} />
-                            Delete
+                            {t.delete}
                           </button>
                         </div>
                       </div>
@@ -1048,6 +1230,7 @@ export default function Home() {
           loadUserUsage()
           setShowPricingModal(false)
         }}
+        language={language}
       />
       
       {/* Next Steps Modal */}

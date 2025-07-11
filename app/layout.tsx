@@ -6,8 +6,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'StudyHelper - AI Document Analysis',
-  description: 'Extract and summarize content from your documents with AI-powered analysis',
+  title: 'StudyHelper - Análise de Documentos com IA',
+  description: 'Extraia e resuma conteúdo de seus documentos com análise alimentada por IA',
 }
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="pt-BR">
         <body className={inter.className}>
           {children}
         </body>

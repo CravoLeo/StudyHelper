@@ -6,17 +6,42 @@ import { Upload, X, FileText, Image } from 'lucide-react'
 
 interface FileUploadProps {
   onFileUpload: (file: File) => void
+  language?: 'pt' | 'en'
 }
 
-export default function FileUpload({ onFileUpload }: FileUploadProps) {
+const translations = {
+  pt: {
+    selectValidPdf: 'Por favor, selecione um arquivo PDF válido',
+    uploadPdf: 'Por favor, carregue um arquivo PDF. OCR de imagens está atualmente indisponível - tente converter sua imagem para PDF primeiro.',
+    fileSizeLimit: 'O tamanho do arquivo deve ser inferior a 15MB',
+    dropFileHere: 'Solte seu arquivo aqui',
+    uploadDocument: 'Carregue seu documento',
+    dragDropText: 'Arraste e solte ou clique para selecionar • Apenas PDF • Máx 15MB',
+    pdfOnly: 'Apenas PDF',
+    imagesConvert: 'Imagens: Converter para PDF'
+  },
+  en: {
+    selectValidPdf: 'Please select a valid PDF file',
+    uploadPdf: 'Please upload a PDF file. Image OCR is currently unavailable - try converting your image to PDF first.',
+    fileSizeLimit: 'File size must be less than 15MB',
+    dropFileHere: 'Drop your file here',
+    uploadDocument: 'Upload your document',
+    dragDropText: 'Drag & drop or click to select • PDF only • Max 15MB',
+    pdfOnly: 'PDF Only',
+    imagesConvert: 'Images: Convert to PDF'
+  }
+}
+
+export default function FileUpload({ onFileUpload, language = 'pt' }: FileUploadProps) {
   const [isDragActive, setIsDragActive] = useState(false)
   const [error, setError] = useState<string>('')
+  const t = translations[language]
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setError('')
     
     if (acceptedFiles.length === 0) {
-      setError('Please select a valid PDF file')
+      setError(t.selectValidPdf)
       return
     }
 
@@ -24,19 +49,19 @@ export default function FileUpload({ onFileUpload }: FileUploadProps) {
     
     // Validate file type - only PDFs supported
     if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file. Image OCR is currently unavailable - try converting your image to PDF first.')
+      setError(t.uploadPdf)
       return
     }
 
     // Validate file size (15MB limit)
     const maxSize = 15 * 1024 * 1024
     if (file.size > maxSize) {
-      setError('File size must be less than 15MB')
+      setError(t.fileSizeLimit)
       return
     }
 
     onFileUpload(file)
-  }, [onFileUpload])
+  }, [onFileUpload, t])
 
   const { getRootProps, getInputProps, isDragActive: dropzoneIsDragActive } = useDropzone({
     onDrop,
@@ -74,22 +99,22 @@ export default function FileUpload({ onFileUpload }: FileUploadProps) {
           <div className="text-center">
             <h3 className="text-xl font-bold text-white mb-2">
               {isDragActive || dropzoneIsDragActive
-                ? 'Drop your file here'
-                : 'Upload your document'}
+                ? t.dropFileHere
+                : t.uploadDocument}
             </h3>
             <p className="text-gray-400">
-              Drag & drop or click to select • PDF only • Max 15MB
+              {t.dragDropText}
             </p>
           </div>
           
           <div className="flex items-center space-x-3 text-sm">
             <div className="flex items-center space-x-1 bg-gray-800 text-green-400 px-3 py-1 rounded">
               <FileText size={14} />
-              <span>PDF Only</span>
+              <span>{t.pdfOnly}</span>
             </div>
             <div className="flex items-center space-x-1 bg-gray-700 text-gray-400 px-3 py-1 rounded">
               <Image size={14} />
-              <span>Images: Convert to PDF</span>
+              <span>{t.imagesConvert}</span>
             </div>
           </div>
         </div>

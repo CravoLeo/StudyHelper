@@ -1,114 +1,215 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Loader2, Sparkles, CheckCircle, AlertCircle, XCircle } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { Loader2, Sparkles, CheckCircle, AlertCircle, XCircle, Globe } from 'lucide-react'
 
 interface AIGenerationProps {
   text: string
   onAIGenerated: (summary: string, questions: string[]) => void
   demoMode?: boolean
+  language?: 'pt' | 'en'
 }
 
-export default function AIGeneration({ text, onAIGenerated, demoMode = false }: AIGenerationProps) {
+export default function AIGeneration({ text, onAIGenerated, demoMode = false, language = 'pt' }: AIGenerationProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [summary, setSummary] = useState('')
   const [questions, setQuestions] = useState<string[]>([])
   const [error, setError] = useState('')
   const [progress, setProgress] = useState(0)
-
+  const [detectedLanguage, setDetectedLanguage] = useState<string>('')
+  const [responseLanguage, setResponseLanguage] = useState<string>('')
+  const [languageDetected, setLanguageDetected] = useState(false)
+  
+  // Prevent multiple simultaneous API calls
+  const isProcessingRef = useRef(false)
+  const hasProcessedRef = useRef(false) // Track if we've already processed this text
+  const lastTextRef = useRef<string>('')
+  
+  // Store the callback in a ref to prevent useEffect from re-running when it changes
+  const onAIGeneratedRef = useRef(onAIGenerated)
+  onAIGeneratedRef.current = onAIGenerated
+  
+  // Generate a unique ID for this component instance
+  const componentId = useRef(Math.random().toString(36).substring(7))
+  
+  // Debug logging
+  console.log(`🔍 [${componentId.current}] AIGeneration render - Demo: ${demoMode}, Text length: ${text.length}, Processing: ${isProcessingRef.current}, HasProcessed: ${hasProcessedRef.current}`)
+  
+  // Track when text changes to help debug re-renders
   useEffect(() => {
+    const textChanged = lastTextRef.current !== text
+    console.log(`📝 [${componentId.current}] Text effect triggered - Changed: ${textChanged}, Length: ${text.length}`)
+    console.log(`📝 [${componentId.current}] Previous text: "${lastTextRef.current.substring(0, 50)}..."`)
+    console.log(`📝 [${componentId.current}] Current text: "${text.substring(0, 50)}..."`)
+    
+    if (textChanged) {
+      lastTextRef.current = text
+      hasProcessedRef.current = false // Reset processing flag when text changes
+      console.log(`📝 [${componentId.current}] Text changed - reset hasProcessed flag`)
+    }
+  }, [text])
+  
+  // Translations for UI elements
+  const translations = {
+    pt: {
+      aiAnalyzing: 'IA está analisando seu conteúdo',
+      creatingContent: 'Criando resumo e questões de estudo...',
+      generatingContent: 'Gerando conteúdo de amostra...',
+      detectingLanguage: 'Detectando idioma do documento',
+      analyzingStructure: 'Analisando estrutura do documento',
+      generatingSummary: 'Gerando resumo abrangente',
+      creatingQuestions: 'Criando questões de estudo',
+      languageDetected: 'Idioma Detectado',
+      generatingIn: 'Gerando conteúdo em',
+      aiProcessingFailed: 'Processamento de IA falhou',
+      aiAnalysisComplete: 'Análise de IA concluída',
+      sampleGenerated: 'Conteúdo de amostra gerado',
+      summaryGenerated: 'Resumo e questões geradas com sucesso',
+      freeSandbox: '🎭 Sandbox Gratuito',
+      readyForEditing: 'Pronto para edição',
+      canEditAndExport: 'Você pode agora editar o resumo e as questões, depois salvar ou exportar seus materiais de estudo.',
+      continueToEdit: 'Continuar para Editar & Exportar →'
+    },
+    en: {
+      aiAnalyzing: 'AI is analyzing your content',
+      creatingContent: 'Creating summary and study questions...',
+      generatingContent: 'Generating sample content...',
+      detectingLanguage: 'Detecting document language',
+      analyzingStructure: 'Analyzing document structure',
+      generatingSummary: 'Generating comprehensive summary',
+      creatingQuestions: 'Creating study questions',
+      languageDetected: 'Language Detected',
+      generatingIn: 'Generating content in',
+      aiProcessingFailed: 'AI processing failed',
+      aiAnalysisComplete: 'AI analysis complete',
+      sampleGenerated: 'Sample content generated',
+      summaryGenerated: 'Summary and questions generated successfully',
+      freeSandbox: '🎭 Free Sandbox',
+      readyForEditing: 'Ready for editing',
+      canEditAndExport: 'You can now edit the summary and questions, then save or export your study materials.',
+      continueToEdit: 'Continue to Edit & Export →'
+    }
+  }
+  
+  const t = translations[language]
+
+  // Single useEffect that only runs when text actually changes
+  useEffect(() => {
+    // Prevent processing if we've already processed this exact text
+    if (hasProcessedRef.current) {
+      console.log(`🚫 [${componentId.current}] Already processed this text, skipping`)
+      return
+    }
+    
+    // Prevent multiple simultaneous API calls
+    if (isProcessingRef.current) {
+      console.log(`🚫 [${componentId.current}] AI generation already in progress, skipping duplicate call`)
+      console.log(`🚫 [${componentId.current}] This should not happen with the fixed logic!`)
+      return
+    }
+    
+    console.log(`🔍 [${componentId.current}] Starting AI generation - Demo: ${demoMode}, Text: ${text.substring(0, 50)}...`)
+    
+    hasProcessedRef.current = true // Mark as processed BEFORE starting
+    isProcessingRef.current = true
+    
     const generateAIContent = async () => {
       setIsLoading(true)
       setError('')
       setProgress(0)
+      setLanguageDetected(false)
 
       try {
-        setProgress(25)
+        setProgress(10)
         
         if (demoMode) {
-          // Demo mode - simulate API delay and return mock data
+          // Demo mode - simulate language detection and API delay
+          await new Promise(resolve => setTimeout(resolve, 600))
+          setProgress(20)
+          
+          // Simulate language detection
+          const sampleText = text.toLowerCase()
+          let mockDetectedLanguage = 'English'
+          let mockResponseLanguage = 'English'
+          
+          // Simple language detection for demo
+          if (sampleText.includes('português') || sampleText.includes('brasil') || sampleText.includes('você') || 
+              sampleText.includes('não') || sampleText.includes('são') || sampleText.includes('uma') ||
+              sampleText.includes('para') || sampleText.includes('com') || sampleText.includes('mais')) {
+            mockDetectedLanguage = 'Portuguese'
+            mockResponseLanguage = 'Portuguese'
+          }
+          
+          setDetectedLanguage(mockDetectedLanguage)
+          setResponseLanguage(mockResponseLanguage)
+          setLanguageDetected(true)
+          setProgress(40)
+          
           await new Promise(resolve => setTimeout(resolve, 800))
-          setProgress(50)
+          setProgress(60)
           
           await new Promise(resolve => setTimeout(resolve, 600))
-          setProgress(75)
+          setProgress(80)
           
-          // Generate dynamic mock content based on text length (matches API scaling)
+          // Generate dynamic mock content based on text length and language
           const textLength = text.length
           let mockSummary = ''
           let mockQuestions: string[] = []
           
-          if (textLength > 20000) {
-            mockSummary = `This extensive document provides an exhaustive analysis of the subject matter with comprehensive coverage of all relevant aspects. The content systematically explores multiple theoretical frameworks, presents detailed empirical evidence, and discusses comprehensive practical applications across various domains. Key findings reveal complex relationships between different variables and concepts, with particular emphasis on advanced implementation strategies and their long-term outcomes. The document thoroughly addresses potential challenges, presents sophisticated solutions, and provides detailed recommendations for effective execution. Additionally, it includes comprehensive case studies, detailed statistical analysis, and extensive references to support all major claims and conclusions.`
-            mockQuestions = [
-              'What are the five primary theoretical frameworks presented and how do they interrelate?',
-              'According to the comprehensive analysis, what empirical evidence supports the main hypothesis?',
-              'How do the advanced implementation strategies address the complex challenges identified?',
-              'What are the detailed performance metrics and success indicators discussed?',
-              'What comprehensive practical applications are suggested for different industry contexts?',
-              'How do the proposed solutions compare with existing methodologies in the field?',
-              'What are the potential long-term risks and detailed mitigation strategies outlined?',
-              'What specific case studies are presented and what lessons can be drawn from them?',
-              'How do the statistical findings support the overall conclusions of the research?',
-              'What are the future research directions and implications suggested by the authors?',
-              'What are the detailed implementation timelines and resource requirements discussed?',
-              'How do the different sections and chapters build upon each other systematically?',
-              'What are the specific recommendations for different stakeholder groups?',
-              'What are the ethical considerations and compliance requirements mentioned?',
-              'How does this comprehensive analysis contribute to the broader field of study?'
-            ]
-          } else if (textLength > 10000) {
-            mockSummary = `This substantial document provides detailed analysis of the subject matter with comprehensive coverage of key concepts and methodologies. The content explores multiple theoretical approaches, presents robust evidence, and discusses extensive practical applications. Key findings indicate significant relationships between different concepts, with emphasis on advanced implementation strategies and their measurable outcomes. The document addresses potential challenges and proposes detailed solutions for effective execution.`
-            mockQuestions = [
-              'What are the four main theoretical approaches discussed and how do they differ?',
-              'According to the detailed analysis, what evidence supports the primary conclusions?',
-              'How do the implementation strategies comprehensively address the challenges identified?',
-              'What are the key performance indicators and success metrics mentioned?',
-              'What extensive practical applications are suggested for real-world implementation?',
-              'How do the proposed solutions compare with existing approaches in the field?',
-              'What are the potential risks and comprehensive mitigation strategies outlined?',
-              'What specific examples and case studies are provided to illustrate key points?',
-              'How do the different methodologies complement each other in practice?',
-              'What are the detailed recommendations for successful implementation?',
-              'What future implications and research directions are suggested?',
-              'How do the various sections of the document connect and build upon each other?'
-            ]
-          } else if (textLength > 5000) {
-            mockSummary = `This comprehensive document covers multiple key areas and provides detailed analysis of the subject matter. The content explores various methodologies, presents supporting evidence, and discusses practical applications. Key findings indicate significant relationships between different concepts, with particular emphasis on implementation strategies and their outcomes. The document also addresses potential challenges and proposes solutions for effective execution.`
-            mockQuestions = [
-              'What are the three main methodologies discussed in the document and how do they differ in their approaches?',
-              'According to the analysis, what evidence supports the primary hypothesis presented?',
-              'How do the implementation strategies address the identified challenges?',
-              'What are the key performance indicators mentioned for measuring success?',
-              'What practical applications are suggested for real-world implementation?',
-              'How do the proposed solutions compare with existing approaches in the field?',
-              'What are the potential risks and mitigation strategies outlined in the document?',
-              'What specific examples are provided to illustrate the main concepts?',
-              'How do the different sections of the document relate to each other?',
-              'What are the key recommendations for practitioners in the field?'
-            ]
-          } else if (textLength > 2000) {
-            mockSummary = `This document provides a focused analysis of the key concepts and presents relevant findings. The content examines important aspects of the subject matter and discusses practical implications. The analysis reveals valuable insights that can be applied to understand the topic better and make informed decisions.`
-            mockQuestions = [
-              'What are the main concepts discussed in this document?',
-              'How do the findings relate to practical applications mentioned?',
-              'What insights can be drawn from the analysis presented?',
-              'What are the key recommendations provided?',
-              'How do the different sections of the document connect to each other?',
-              'What evidence supports the conclusions drawn?',
-              'What are the practical implications of the findings?',
-              'How does this analysis contribute to understanding the topic?'
-            ]
+          if (mockResponseLanguage === 'Portuguese') {
+            // Portuguese mock content
+            if (textLength > 5000) {
+              mockSummary = `Este documento abrangente cobre múltiplas áreas-chave e fornece análise detalhada do assunto. O conteúdo explora várias metodologias, apresenta evidências de apoio e discute aplicações práticas. Os principais achados indicam relações significativas entre diferentes conceitos, com ênfase particular em estratégias de implementação e seus resultados. O documento também aborda desafios potenciais e propõe soluções para execução eficaz.`
+              mockQuestions = [
+                'Quais são as três principais metodologias discutidas no documento e como diferem em suas abordagens?',
+                'De acordo com a análise, que evidências apoiam a hipótese principal apresentada?',
+                'Como as estratégias de implementação abordam os desafios identificados?',
+                'Quais são os principais indicadores de desempenho mencionados para medir o sucesso?',
+                'Que aplicações práticas são sugeridas para implementação no mundo real?',
+                'Como as soluções propostas se comparam com as abordagens existentes na área?',
+                'Quais são os riscos potenciais e estratégias de mitigação descritas no documento?',
+                'Que exemplos específicos são fornecidos para ilustrar os conceitos principais?',
+                'Como as diferentes seções do documento se relacionam entre si?',
+                'Quais são as principais recomendações para profissionais da área?'
+              ]
+            } else {
+              mockSummary = `Este documento apresenta informações essenciais sobre o tópico com explicações claras e exemplos relevantes. O conteúdo abrange conceitos fundamentais e fornece insights práticos que ajudam a entender o assunto de forma eficaz.`
+              mockQuestions = [
+                'Quais são os conceitos fundamentais explicados neste documento?',
+                'Como os exemplos fornecidos ilustram os pontos principais?',
+                'Que insights práticos podem ser obtidos deste conteúdo?',
+                'Quais são as principais conclusões deste material?',
+                'Como essas informações se relacionam com aplicações mais amplas?',
+                'Quais são as principais conclusões apresentadas no documento?'
+              ]
+            }
           } else {
-            mockSummary = `This document presents essential information about the topic with clear explanations and relevant examples. The content covers fundamental concepts and provides practical insights that help understand the subject matter effectively.`
-            mockQuestions = [
-              'What are the fundamental concepts explained in this document?',
-              'How do the examples provided illustrate the main points?',
-              'What practical insights can be gained from this content?',
-              'What are the key takeaways from this material?',
-              'How does this information relate to broader applications?',
-              'What are the main conclusions presented in the document?'
-            ]
+            // English mock content (existing logic)
+            if (textLength > 5000) {
+              mockSummary = `This comprehensive document covers multiple key areas and provides detailed analysis of the subject matter. The content explores various methodologies, presents supporting evidence, and discusses practical applications. Key findings indicate significant relationships between different concepts, with particular emphasis on implementation strategies and their outcomes. The document also addresses potential challenges and proposes solutions for effective execution.`
+              mockQuestions = [
+                'What are the three main methodologies discussed in the document and how do they differ in their approaches?',
+                'According to the analysis, what evidence supports the primary hypothesis presented?',
+                'How do the implementation strategies address the identified challenges?',
+                'What are the key performance indicators mentioned for measuring success?',
+                'What practical applications are suggested for real-world implementation?',
+                'How do the proposed solutions compare with existing approaches in the field?',
+                'What are the potential risks and mitigation strategies outlined in the document?',
+                'What specific examples are provided to illustrate the main concepts?',
+                'How do the different sections of the document relate to each other?',
+                'What are the key recommendations for practitioners in the field?'
+              ]
+            } else {
+              mockSummary = `This document presents essential information about the topic with clear explanations and relevant examples. The content covers fundamental concepts and provides practical insights that help understand the subject matter effectively.`
+              mockQuestions = [
+                'What are the fundamental concepts explained in this document?',
+                'How do the examples provided illustrate the main points?',
+                'What practical insights can be gained from this content?',
+                'What are the key takeaways from this material?',
+                'How does this information relate to broader applications?',
+                'What are the main conclusions presented in the document?'
+              ]
+            }
           }
           
           await new Promise(resolve => setTimeout(resolve, 400))
@@ -119,7 +220,8 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           
           // Small delay to show completion
           setTimeout(() => {
-            onAIGenerated(mockSummary, mockQuestions)
+            console.log('🎭 Demo mode calling onAIGenerated callback')
+            onAIGeneratedRef.current(mockSummary, mockQuestions)
             
             // No usage refresh in demo mode - sandbox doesn't consume credits
             console.log('🎭 Demo mode completed - no usage consumed')
@@ -144,7 +246,37 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           const data = await response.json()
           
           if (data.error) {
-            throw new Error(data.error)
+            // Handle user lock specifically
+            if (data.retry && response.status === 429) {
+              console.log('🔒 User locked, retrying in 2 seconds...')
+              await new Promise(resolve => setTimeout(resolve, 2000))
+              
+              // Retry the request once
+              const retryResponse = await fetch('/api/generate-ai-content', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text }),
+              })
+              
+              const retryData = await retryResponse.json()
+              if (retryData.error) {
+                throw new Error(retryData.error)
+              }
+              
+              // Use retry data instead
+              Object.assign(data, retryData)
+            } else {
+              throw new Error(data.error)
+            }
+          }
+
+          // Set language detection results
+          if (data.detected_language) {
+            setDetectedLanguage(data.detected_language)
+            setResponseLanguage(data.response_language || data.detected_language)
+            setLanguageDetected(true)
           }
 
           setProgress(75)
@@ -156,7 +288,8 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           
           // Small delay to show completion
           setTimeout(() => {
-            onAIGenerated(data.summary, data.questions)
+            console.log('🔄 Real API mode calling onAIGenerated callback')
+            onAIGeneratedRef.current(data.summary, data.questions)
             
             // Refresh usage after successful AI generation
             const refreshEvent = new CustomEvent('refreshUsage')
@@ -169,11 +302,17 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setIsLoading(false)
+        isProcessingRef.current = false
       }
     }
 
     generateAIContent()
-  }, [text, onAIGenerated, demoMode])
+    
+    // Cleanup function to reset processing flag
+    return () => {
+      isProcessingRef.current = false
+    }
+  }, [text, demoMode]) // Removed onAIGenerated from dependencies to prevent re-renders
 
   if (isLoading) {
     return (
@@ -188,26 +327,47 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {demoMode ? '🎭 Free Sandbox: Simulating AI analysis' : 'AI is analyzing your content'}
+              {demoMode ? `${t.freeSandbox}: Simulating AI analysis` : t.aiAnalyzing}
             </h3>
             <p className="text-gray-400 text-lg">
-              {demoMode ? 'Generating sample content...' : 'Creating summary and study questions...'}
+              {demoMode ? t.generatingContent : t.creatingContent}
             </p>
           </div>
+          
+          {/* Language Detection Status */}
+          {languageDetected && (
+            <div className="bg-blue-500/10 backdrop-blur-sm rounded-xl p-4 border border-blue-500/30">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Globe size={16} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-blue-200 font-medium">{t.languageDetected}: {detectedLanguage}</p>
+                  <p className="text-blue-300/80 text-sm">
+                    {t.generatingIn} {responseLanguage}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700">
             <div className="space-y-3">
               <div className="flex items-center space-x-3 text-sm text-gray-300">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Analyzing document structure</span>
+                <span>{t.detectingLanguage}</span>
               </div>
               <div className="flex items-center space-x-3 text-sm text-gray-300">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-                <span>Generating comprehensive summary</span>
+                <span>{t.analyzingStructure}</span>
               </div>
               <div className="flex items-center space-x-3 text-sm text-gray-300">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
-                <span>Creating study questions</span>
+                <span>{t.generatingSummary}</span>
+              </div>
+              <div className="flex items-center space-x-3 text-sm text-gray-300">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
+                <span>{t.creatingQuestions}</span>
               </div>
             </div>
           </div>
@@ -226,7 +386,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              AI processing failed
+              {t.aiProcessingFailed}
             </h3>
             <p className="text-gray-400 text-lg max-w-md">
               {error}
@@ -256,19 +416,33 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
             </div>
             <div>
               <h3 className="text-2xl font-bold text-white">
-                AI analysis complete
+                {t.aiAnalysisComplete}
               </h3>
               <p className="text-gray-400">
-                {demoMode ? 'Sample content generated' : 'Summary and questions generated successfully'}
+                {demoMode ? t.sampleGenerated : t.summaryGenerated}
               </p>
             </div>
           </div>
           
-          {demoMode && (
-            <div className="bg-yellow-500/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-yellow-500/30">
-              <span className="text-yellow-300 text-sm font-medium">🎭 Free Sandbox</span>
-            </div>
-          )}
+          <div className="flex items-center space-x-3">
+            {/* Language Detection Badge */}
+            {detectedLanguage && (
+              <div className="bg-blue-500/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-blue-500/30">
+                <div className="flex items-center space-x-2">
+                  <Globe size={16} className="text-blue-400" />
+                  <span className="text-blue-300 text-sm font-medium">
+                    {responseLanguage}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {demoMode && (
+              <div className="bg-yellow-500/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-yellow-500/30">
+                <span className="text-yellow-300 text-sm font-medium">{t.freeSandbox}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="bg-green-500/10 backdrop-blur-sm rounded-xl p-4 border border-green-500/30">
@@ -277,9 +451,11 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
               <CheckCircle size={16} className="text-white" />
             </div>
             <div>
-              <p className="text-green-200 font-medium">Ready for editing</p>
+              <p className="text-green-200 font-medium">
+                {t.readyForEditing}
+              </p>
               <p className="text-green-300/80 text-sm">
-                You can now edit the summary and questions, then save or export your study materials.
+                {t.canEditAndExport}
               </p>
             </div>
           </div>
@@ -338,10 +514,13 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false }: 
 
         <div className="flex justify-end">
           <button
-            onClick={() => onAIGenerated(summary, questions)}
+            onClick={() => {
+              console.log('🔄 Continue button clicked - calling onAIGenerated')
+              onAIGeneratedRef.current(summary, questions)
+            }}
             className="px-8 py-3 bg-white text-gray-900 rounded-xl font-semibold hover:bg-white/90 transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
-            Continue to Edit & Export →
+            {t.continueToEdit}
           </button>
         </div>
       </div>

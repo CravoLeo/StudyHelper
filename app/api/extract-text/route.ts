@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // import { createWorker, Worker } from 'tesseract.js' // Temporarily disabled
 import pdfParse from 'pdf-parse'
 import { auth } from '@clerk/nextjs/server'
-import { canUserMakeRequest, decrementUserUsage } from '@/lib/database'
+import { canUserMakeRequest } from '@/lib/database'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -112,10 +112,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Decrement user usage on successful extraction (skip in demo mode)
+    // Note: Usage is NOT decremented here - text extraction is just preprocessing
+    // Usage will be decremented in the AI generation API after successful completion
     if (!demoMode && userId) {
-      await decrementUserUsage(userId)
-      console.log('✅ User usage decremented')
+      console.log('✅ Text extraction successful - usage will be charged during AI generation')
     } else {
       console.log('🎭 Demo mode - no usage consumed')
     }

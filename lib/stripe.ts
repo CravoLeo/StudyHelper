@@ -56,7 +56,7 @@ export async function createPaymentIntent(customerId: string, amount: number, pl
   try {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100, // Convert to cents
-      currency: 'usd',
+      currency: 'brl',
       customer: customerId,
       metadata: {
         planType: planType

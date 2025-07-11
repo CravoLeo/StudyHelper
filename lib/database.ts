@@ -23,26 +23,26 @@ export const PRICING_PLANS = {
   },
   individual: {
     name: 'Individual Uses',
-    uses: 3,
-    price: 1,
-    description: '3 uses for just $1'
+    uses: 5,
+    price: 5,
+    description: '5 uses for just R$ 5'
   },
   starter: {
     name: 'Starter Pack',
     uses: 20,
-    price: 5,
+    price: 15,
     description: '20 additional uses'
   },
   pro: {
     name: 'Pro Pack',
     uses: 100,
-    price: 20,
+    price: 30,
     description: '100 uses for heavy users'
   },
   unlimited: {
     name: 'Unlimited Monthly',
     uses: -1, // -1 means unlimited
-    price: 50,
+    price: 100,
     description: 'Unlimited uses for 30 days'
   }
 } as const
@@ -324,22 +324,33 @@ export async function updateUserUsage(userId: string, updates: Partial<UserUsage
 }
 
 export async function decrementUserUsage(userId: string): Promise<UserUsage | null> {
+  console.log(`💳 [USAGE] decrementUserUsage called for user: ${userId}`)
+  
   if (isLocalMode) {
-    console.warn('⚠️  Usage tracking not available in local mode')
+    console.warn('⚠️ [USAGE] Usage tracking not available in local mode')
     return null
   }
 
   try {
     // Get current usage
+    console.log(`💳 [USAGE] Getting current usage for user: ${userId}`)
     const currentUsage = await getUserUsage(userId)
     if (!currentUsage) {
+      console.error(`❌ [USAGE] No usage record found for user: ${userId}`)
       return null
     }
+
+    console.log(`💳 [USAGE] Current usage for ${userId}:`, {
+      uses_remaining: currentUsage.uses_remaining,
+      plan_type: currentUsage.plan_type,
+      plan_expires_at: currentUsage.plan_expires_at
+    })
 
     // Check if unlimited or if plan has expired
     if (currentUsage.plan_type === 'unlimited') {
       const expiresAt = currentUsage.plan_expires_at
       if (expiresAt && new Date(expiresAt) < new Date()) {
+        console.log(`⏰ [USAGE] Unlimited plan expired for ${userId}, resetting to free`)
         // Unlimited plan has expired, reset to free
         return await updateUserUsage(userId, {
           uses_remaining: 0,
@@ -348,17 +359,28 @@ export async function decrementUserUsage(userId: string): Promise<UserUsage | nu
         })
       }
       // Still unlimited and not expired
+      console.log(`♾️ [USAGE] User ${userId} has unlimited plan, no decrement needed`)
       return currentUsage
     }
 
     // Decrement uses for non-unlimited plans
     const newUsesRemaining = Math.max(0, currentUsage.uses_remaining - 1)
     
-    return await updateUserUsage(userId, {
+    console.log(`💳 [USAGE] Decrementing usage for ${userId}: ${currentUsage.uses_remaining} → ${newUsesRemaining}`)
+    
+    const result = await updateUserUsage(userId, {
       uses_remaining: newUsesRemaining
     })
+    
+    if (result) {
+      console.log(`✅ [USAGE] Successfully decremented usage for ${userId}: ${result.uses_remaining} credits remaining`)
+    } else {
+      console.error(`❌ [USAGE] Failed to update usage for user: ${userId}`)
+    }
+    
+    return result
   } catch (error) {
-    console.error('Error decrementing user usage:', error)
+    console.error(`❌ [USAGE] Error decrementing user usage for ${userId}:`, error)
     return null
   }
 }
