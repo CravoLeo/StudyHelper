@@ -232,16 +232,7 @@ export default function PricingModal({ isOpen, onClose, currentUsage, onPaymentS
         </div>
 
         {currentUsage && (
-          <div className="mb-8 p-4 bg-gray-800/50 rounded-lg">
-            {/* Debug info */}
-            <div className="mb-2 text-xs text-gray-500">
-              DEBUG: plan_type = "{currentUsage.plan_type}", uses = {currentUsage.uses_remaining}
-              <br />
-              DEBUG: subscriptionStatus = {JSON.stringify(subscriptionStatus)}
-              <br />
-              DEBUG: fetchingStatus = {fetchingStatus.toString()}
-            </div>
-            
+          <div className="mb-8 p-4 bg-gray-800/50 rounded-lg">            
             {currentUsage.plan_type === 'unlimited' ? (
               <>
                 <div className="flex items-center justify-between">
