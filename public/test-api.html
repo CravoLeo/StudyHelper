@@ -61,6 +61,7 @@
         
         <button onclick="testHealthCheck()">Test Health Check API</button>
         <button onclick="testAIAPI()">Test AI API (requires auth)</button>
+        <button onclick="testSimpleAI()">Test Simple AI API</button>
         <button onclick="testAllRoutes()">Test All API Routes</button>
         
         <div id="results"></div>
@@ -140,6 +141,43 @@ ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`, 'error');
             }
         }
 
+        async function testSimpleAI() {
+            clearResults();
+            addResult('🔍 Testing /api/test-ai-simple endpoint...');
+            
+            try {
+                const response = await fetch('/api/test-ai-simple', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: 'This is a simple test for the AI API.'
+                    })
+                });
+                
+                const text = await response.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = text;
+                }
+                
+                if (response.ok) {
+                    addResult(`✅ Simple AI API Response (${response.status}):
+${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    addResult(`❌ Simple AI API Error (${response.status}):
+${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Simple AI API Test Failed: ${error.message}`, 'error');
+            }
+        }
+
         async function testAllRoutes() {
             clearResults();
             addResult('🔍 Testing all API routes...');
@@ -148,6 +186,7 @@ ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`, 'error');
                 '/api/health-check',
                 '/api/extract-text',
                 '/api/generate-ai-content',
+                '/api/test-ai-simple',
                 '/api/user-usage',
                 '/api/create-payment-intent',
                 '/api/create-subscription',
@@ -158,14 +197,14 @@ ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`, 'error');
             ];
             
             for (const route of routes) {
-                try {
-                    const response = await fetch(route, {
-                        method: route.includes('generate-ai-content') || route.includes('extract-text') ? 'POST' : 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: route.includes('generate-ai-content') ? JSON.stringify({text: 'test'}) : undefined
-                    });
+                                 try {
+                     const response = await fetch(route, {
+                         method: route.includes('generate-ai-content') || route.includes('extract-text') || route.includes('test-ai-simple') ? 'POST' : 'GET',
+                         headers: {
+                             'Content-Type': 'application/json',
+                         },
+                         body: (route.includes('generate-ai-content') || route.includes('test-ai-simple')) ? JSON.stringify({text: 'test'}) : undefined
+                     });
                     
                     const status = response.status;
                     const statusText = response.statusText;

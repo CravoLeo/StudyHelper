@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       console.error('OpenAI Error:', openaiError)
       return NextResponse.json({ 
         error: 'OpenAI integration failed', 
-        details: openaiError.message 
+        details: openaiError instanceof Error ? openaiError.message : 'Unknown OpenAI error'
       }, { status: 500 })
     }
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     console.error('Test AI API error:', error)
     return NextResponse.json({ 
       error: 'Test failed', 
-      details: error.message 
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 } 
