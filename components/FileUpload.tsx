@@ -16,16 +16,15 @@ export default function FileUpload({ onFileUpload }: FileUploadProps) {
     setError('')
     
     if (acceptedFiles.length === 0) {
-      setError('Please select a valid PDF or image file')
+      setError('Please select a valid PDF file')
       return
     }
 
     const file = acceptedFiles[0]
     
-    // Validate file type
-    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
-    if (!validTypes.includes(file.type)) {
-      setError('Please upload a PDF, JPG, or PNG file')
+    // Validate file type - only PDFs supported
+    if (file.type !== 'application/pdf') {
+      setError('Please upload a PDF file. Image OCR is currently unavailable - try converting your image to PDF first.')
       return
     }
 
@@ -42,9 +41,7 @@ export default function FileUpload({ onFileUpload }: FileUploadProps) {
   const { getRootProps, getInputProps, isDragActive: dropzoneIsDragActive } = useDropzone({
     onDrop,
     accept: {
-      'application/pdf': ['.pdf'],
-      'image/jpeg': ['.jpg', '.jpeg'],
-      'image/png': ['.png']
+      'application/pdf': ['.pdf']
     },
     multiple: false,
     onDragEnter: () => setIsDragActive(true),
@@ -81,22 +78,18 @@ export default function FileUpload({ onFileUpload }: FileUploadProps) {
                 : 'Upload your document'}
             </h3>
             <p className="text-gray-400">
-              Drag & drop or click to select • Max 15MB
+              Drag & drop or click to select • PDF only • Max 15MB
             </p>
           </div>
           
           <div className="flex items-center space-x-3 text-sm">
             <div className="flex items-center space-x-1 bg-gray-800 text-green-400 px-3 py-1 rounded">
               <FileText size={14} />
-              <span>PDF</span>
+              <span>PDF Only</span>
             </div>
-            <div className="flex items-center space-x-1 bg-gray-800 text-green-400 px-3 py-1 rounded">
+            <div className="flex items-center space-x-1 bg-gray-700 text-gray-400 px-3 py-1 rounded">
               <Image size={14} />
-              <span>JPG</span>
-            </div>
-            <div className="flex items-center space-x-1 bg-gray-800 text-green-400 px-3 py-1 rounded">
-              <Image size={14} />
-              <span>PNG</span>
+              <span>Images: Convert to PDF</span>
             </div>
           </div>
         </div>

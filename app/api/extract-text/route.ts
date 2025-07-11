@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createWorker, Worker } from 'tesseract.js'
+// import { createWorker, Worker } from 'tesseract.js' // Temporarily disabled
 import pdfParse from 'pdf-parse'
 import { auth } from '@clerk/nextjs/server'
 import { canUserMakeRequest, decrementUserUsage } from '@/lib/database'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
-export const maxDuration = 30 // Maximum 30 seconds for Vercel
+// export const runtime = 'nodejs' // Not needed for PDF-only processing
+// export const maxDuration = 30 // Not needed for PDF-only processing
 
-// Helper function to create a timeout promise
-const createTimeout = (ms: number) => {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error(`Operation timed out after ${ms}ms`)), ms)
-  })
-}
+// Helper function to create a timeout promise - not needed for PDF-only processing
+// const createTimeout = (ms: number) => {
+//   return new Promise((_, reject) => {
+//     setTimeout(() => reject(new Error(`Operation timed out after ${ms}ms`)), ms)
+//   })
+// }
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,13 +63,11 @@ export async function POST(request: NextRequest) {
       demoMode: demoMode
     })
 
-    // Check file size limit (5MB for images, 15MB for PDFs to ensure serverless compatibility)
-    const maxSize = file.type.startsWith('image/') ? 5 * 1024 * 1024 : 15 * 1024 * 1024
-    if (file.size > maxSize) {
+    // Check file size limit (15MB for PDFs)
+    if (file.size > 15 * 1024 * 1024) {
       console.log('❌ File too large:', file.size, 'bytes')
-      const maxSizeMB = file.type.startsWith('image/') ? '5MB' : '15MB'
       return NextResponse.json({ 
-        error: `File too large. Maximum size for ${file.type.startsWith('image/') ? 'images' : 'PDFs'} is ${maxSizeMB}. For better OCR results with large images, try converting to PDF first.` 
+        error: 'File too large. Maximum size is 15MB.' 
       }, { status: 400 })
     }
 
@@ -92,135 +90,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to extract text from PDF' }, { status: 500 })
       }
     } else if (file.type.startsWith('image/')) {
-      // Handle image files with OCR
-      console.log('🔍 Processing image file with OCR...')
-      console.log('📊 Image details - Type:', file.type, 'Size:', (file.size / 1024 / 1024).toFixed(2), 'MB')
-      
-      let worker: Worker | null = null
-      try {
-        // Create worker with optimized configuration for serverless
-        console.log('🔧 Creating Tesseract worker with optimized config...')
-        const startTime = Date.now()
-        
-        // Serverless-optimized configuration
-        worker = await createWorker('eng', 1, {
-          logger: m => {
-            console.log(`OCR Status: ${m.status} - Progress: ${Math.round(m.progress * 100)}%`)
-          },
-          cachePath: '/tmp',
-          cacheMethod: 'write',
-          gzip: false
-        })
-        
-        // Worker configured with default settings for better serverless compatibility
-        
-        console.log('✅ Worker created in', Date.now() - startTime, 'ms')
-        
-        // Reduced timeout to 25 seconds for Vercel limitations
-        const ocrTimeout = 25000 // 25 seconds (Vercel has 30s max)
-        console.log('🔍 Starting OCR recognition with', ocrTimeout/1000, 'second timeout...')
-        
-        const ocrStartTime = Date.now()
-        
-        // Create a more robust OCR promise
-        const ocrPromise = new Promise(async (resolve, reject) => {
-          try {
-            if (!worker) {
-              reject(new Error('Worker not initialized'))
-              return
-            }
-            const result = await worker.recognize(buffer)
-            resolve(result)
-          } catch (error) {
-            reject(error)
-          }
-        })
-        
-        const timeoutPromise = createTimeout(ocrTimeout)
-        
-        // Race between OCR and timeout
-        console.log('⏳ OCR process started, waiting for result...')
-        const result = await Promise.race([ocrPromise, timeoutPromise])
-        
-        const ocrDuration = Date.now() - ocrStartTime
-        console.log('⏱️ OCR completed in', ocrDuration, 'ms')
-        
-        if (result && typeof result === 'object' && result !== null && 'data' in result) {
-          const ocrResult = result as { data: { text: string; confidence: number } }
-          extractedText = ocrResult.data.text
-          console.log('✅ OCR text extracted, length:', extractedText.length, 'characters')
-          console.log('📊 OCR confidence:', ocrResult.data.confidence)
-          console.log('📝 Preview:', extractedText.substring(0, 100) + '...')
-          
-          // Check if OCR confidence is too low
-          if (ocrResult.data.confidence < 30) {
-            console.log('⚠️ Low OCR confidence:', ocrResult.data.confidence)
-            return NextResponse.json({ 
-              error: 'Image quality too low for reliable text extraction. Please try with a clearer, higher-resolution image.',
-              confidence: ocrResult.data.confidence
-            }, { status: 400 })
-          }
-        } else {
-          console.log('❌ Invalid OCR result structure:', typeof result)
-          throw new Error('OCR processing returned invalid result')
-        }
-        
-      } catch (error) {
-        console.error('❌ OCR processing error:', error)
-        
-        // Provide more specific error messages
-        if (error instanceof Error) {
-          if (error.message.includes('timeout')) {
-            console.log('⏰ OCR timed out after 45 seconds')
-            return NextResponse.json({ 
-              error: 'Image processing timed out. Please try with a smaller or clearer image, or convert to PDF first.' 
-            }, { status: 408 })
-          }
-          if (error.message.includes('memory') || error.message.includes('Memory')) {
-            console.log('💾 Memory error during OCR')
-            return NextResponse.json({ 
-              error: 'Image too large to process. Please resize to under 5MB or convert to PDF.' 
-            }, { status: 413 })
-          }
-          if (error.message.includes('worker') || error.message.includes('Worker')) {
-            console.log('🔧 Worker initialization error')
-            return NextResponse.json({ 
-              error: 'OCR service temporarily unavailable. Please try again in a moment or convert to PDF.' 
-            }, { status: 503 })
-          }
-          if (error.message.includes('wasm') || error.message.includes('WASM')) {
-            console.log('🔧 WASM loading error')
-            return NextResponse.json({ 
-              error: 'OCR engine failed to load. Please try again or convert your image to PDF.' 
-            }, { status: 503 })
-          }
-        }
-        
-        console.log('🔍 General OCR error, might be image quality or format issue')
-        return NextResponse.json({ 
-          error: 'Failed to extract text from image. For better results, try converting to PDF or using a clearer image.' 
-        }, { status: 500 })
-      } finally {
-        // Always terminate the worker
-        if (worker) {
-          try {
-            console.log('🔧 Terminating Tesseract worker...')
-            await worker.terminate()
-            console.log('✅ Tesseract worker terminated successfully')
-          } catch (terminateError) {
-            console.error('⚠️ Error terminating worker:', terminateError)
-          }
-        }
-      }
+      // Image OCR temporarily disabled - suggest PDF conversion
+      console.log('📋 Image upload detected - suggesting PDF conversion')
+      return NextResponse.json({ 
+        error: 'Image processing is currently unavailable. For best results, please convert your image to PDF using an online converter (like ilovepdf.com or smallpdf.com) and try again. PDF processing works perfectly with AI generation!' 
+      }, { status: 400 })
     } else {
       console.log('❌ Unsupported file type:', file.type)
-      return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 })
+      return NextResponse.json({ 
+        error: 'Unsupported file type. Currently only PDF files are supported. Please convert your document to PDF and try again.' 
+      }, { status: 400 })
     }
 
     if (!extractedText.trim()) {
       console.log('❌ No text found in the document')
       return NextResponse.json({ 
-        error: 'No text found in the document. Please ensure the image contains clear, readable text.' 
+        error: 'No text found in the PDF. Please ensure the PDF contains readable text (not just scanned images).' 
       }, { status: 400 })
     }
 
