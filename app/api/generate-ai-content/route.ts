@@ -14,7 +14,10 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth()
     
     if (!userId) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      return NextResponse.json({ 
+        error: 'Real AI features require an account. Try our demo mode for a preview!',
+        needsAuth: true 
+      }, { status: 401 })
     }
 
     const { text } = await request.json()

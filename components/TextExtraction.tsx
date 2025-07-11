@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, FileText, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react'
+import { Loader2, FileText, Eye, EyeOff, CheckCircle, XCircle, User } from 'lucide-react'
 
 interface TextExtractionProps {
   file: File
@@ -41,6 +41,13 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
           console.error('❌ API Error:', errorData)
+          
+          // Check if this is an authentication error
+          if (response.status === 401 && errorData.needsAuth) {
+            setError('NEEDS_AUTH')
+            return
+          }
+          
           throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
         }
 
@@ -127,26 +134,51 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
   }
 
   if (error) {
-    // Check if this is a usage limit error
+    // Check if this is a usage limit error or authentication error
     const isUsageLimitError = error.includes('Usage limit exceeded')
+    const needsAuth = error === 'NEEDS_AUTH'
     
     return (
       <div className="text-center py-12">
         <div className="flex flex-col items-center space-y-8">
-          <div className="w-16 h-16 bg-red-500/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-red-500/30">
-            <XCircle size={32} className="text-red-400" />
+          <div className={`w-16 h-16 ${needsAuth ? 'bg-blue-500/20 border-blue-500/30' : 'bg-red-500/20 border-red-500/30'} backdrop-blur-sm rounded-full flex items-center justify-center border`}>
+            {needsAuth ? (
+              <User size={32} className="text-blue-400" />
+            ) : (
+              <XCircle size={32} className="text-red-400" />
+            )}
           </div>
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {isUsageLimitError ? 'Usage limit reached' : 'Extraction failed'}
+              {needsAuth ? 'Sign in required' : isUsageLimitError ? 'Usage limit reached' : 'Extraction failed'}
             </h3>
             <p className="text-gray-400 text-lg max-w-md">
-              {error}
+              {needsAuth 
+                ? 'Real AI features require an account. Try our demo mode to see how it works first!'
+                : error
+              }
             </p>
           </div>
           
-          {isUsageLimitError ? (
+          {needsAuth ? (
+            <div className="bg-blue-500/10 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30 max-w-md">
+              <div className="text-center space-y-4">
+                <p className="text-blue-300 text-sm">
+                  🚀 For real AI features, please sign in using the button in the top-right corner. Or try our free demo mode to see how it works!
+                </p>
+                <button
+                  onClick={() => {
+                    // Redirect to home with demo mode enabled
+                    window.location.href = '/?demo=true'
+                  }}
+                  className="px-8 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors text-lg"
+                >
+                  Try Demo Mode
+                </button>
+              </div>
+            </div>
+          ) : isUsageLimitError ? (
             <div className="bg-yellow-500/10 backdrop-blur-sm rounded-xl p-6 border border-yellow-500/30 max-w-md">
               <div className="text-center space-y-4">
                 <p className="text-yellow-300 text-sm">
@@ -180,7 +212,7 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
             </div>
           )}
           
-          {!isUsageLimitError && (
+          {!isUsageLimitError && !needsAuth && (
             <div className="flex gap-3">
               <button
                 onClick={() => window.location.reload()}

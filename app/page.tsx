@@ -40,9 +40,16 @@ export default function Home() {
   const [showPricingModal, setShowPricingModal] = useState(false)
   const [showNextStepsModal, setShowNextStepsModal] = useState(false)
   const [usageLoading, setUsageLoading] = useState(false)
+  const [showStatusMessage, setShowStatusMessage] = useState(true)
 
   // Simplified maintenance mode check - only run on client
   useEffect(() => {
+    // Check URL parameters for demo mode
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('demo') === 'true') {
+      setDemoMode(true)
+    }
+
     // Only check maintenance mode, don't block rendering
     const checkMaintenanceMode = async () => {
       try {
@@ -621,23 +628,39 @@ export default function Home() {
       </nav>
 
       {/* Status Messages */}
-      {isLocalMode && (
+      {showStatusMessage && isLocalMode && (
         <div className="mb-4 max-w-4xl mx-auto px-6">
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-sm">
-              <AlertCircle className="h-4 w-4 text-yellow-400" />
-              <span className="text-yellow-200">Local Mode: Documents saved to browser only</span>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-400" />
+                <span className="text-yellow-200">Local Mode: Documents saved to browser only</span>
+              </div>
+              <button
+                onClick={() => setShowStatusMessage(false)}
+                className="text-yellow-400 hover:text-yellow-200 transition-colors"
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {!isLocalMode && (
+      {showStatusMessage && !isLocalMode && (
         <div className="mb-4 max-w-4xl mx-auto px-6">
           <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle className="h-4 w-4 text-green-400" />
-              <span className="text-green-200">Cloud Mode: Documents securely saved</span>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-400" />
+                <span className="text-green-200">Cloud Mode: Documents securely saved</span>
+              </div>
+              <button
+                onClick={() => setShowStatusMessage(false)}
+                className="text-green-400 hover:text-green-200 transition-colors"
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>

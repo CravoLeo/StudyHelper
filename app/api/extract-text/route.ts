@@ -25,16 +25,19 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const demoMode = formData.get('demoMode') === 'true'
     
-    // Check authentication
+    // Check authentication - allow demo mode without login
     const { userId } = await auth()
     
-    if (!userId) {
-      console.log('❌ No user authentication')
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    if (!demoMode && !userId) {
+      console.log('❌ No user authentication (real mode requires login)')
+      return NextResponse.json({ 
+        error: 'Real AI features require an account. Try our demo mode to see how it works!',
+        needsAuth: true 
+      }, { status: 401 })
     }
     
     // Check if user can make request (usage limits) - skip in demo mode
-    if (!demoMode) {
+    if (!demoMode && userId) {
       const { canMake, usage } = await canUserMakeRequest(userId)
       
       if (!canMake) {
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
       
       console.log('✅ User authentication and usage check passed')
     } else {
-      console.log('🎭 Demo mode - skipping usage check')
+      console.log('🎭 Demo mode - skipping authentication and usage check')
     }
 
     if (!file) {
@@ -110,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Decrement user usage on successful extraction (skip in demo mode)
-    if (!demoMode) {
+    if (!demoMode && userId) {
       await decrementUserUsage(userId)
       console.log('✅ User usage decremented')
     } else {
