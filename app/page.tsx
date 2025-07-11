@@ -6,8 +6,9 @@ import FileUpload from '@/components/FileUpload'
 import TextExtraction from '@/components/TextExtraction'
 import AIGeneration from '@/components/AIGeneration'
 import PricingModal from '@/components/PricingModal'
+import NextStepsModal from '@/components/NextStepsModal'
 import MaintenanceMode from '@/components/MaintenanceMode'
-import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap } from 'lucide-react'
+import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket } from 'lucide-react'
 import { SavedDocument, isLocalMode } from '@/lib/supabase'
 import { saveDocument, getDocuments, deleteDocument, UserUsage } from '@/lib/database'
 
@@ -37,6 +38,7 @@ export default function Home() {
   // Usage tracking state
   const [userUsage, setUserUsage] = useState<UserUsage | null>(null)
   const [showPricingModal, setShowPricingModal] = useState(false)
+  const [showNextStepsModal, setShowNextStepsModal] = useState(false)
   const [usageLoading, setUsageLoading] = useState(false)
 
   // Simplified maintenance mode check - only run on client
@@ -551,6 +553,14 @@ export default function Home() {
                   Upgrade
                 </button>
               )}
+              
+              <button 
+                onClick={() => setShowNextStepsModal(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
+                <Rocket className="w-4 h-4" />
+                What's Next?
+              </button>
             </div>
           )}
           
@@ -592,11 +602,20 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <SignInButton mode="modal">
-              <button className="px-6 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium text-sm">
-                Sign In
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowNextStepsModal(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+              >
+                <Rocket className="w-4 h-4" />
+                What's Next?
               </button>
-            </SignInButton>
+              <SignInButton mode="modal">
+                <button className="px-6 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium text-sm">
+                  Sign In
+                </button>
+              </SignInButton>
+            </div>
           )}
         </div>
       </nav>
@@ -734,21 +753,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Trust Indicators - Cleaner */}
-        {currentStep === 'upload' && (
-          <div className="text-center">
-            <p className="text-gray-500 text-xs mb-3 uppercase tracking-wide">Trusted by students at</p>
-            <div className="flex justify-center items-center gap-6 text-gray-600 text-sm">
-              <span>Universities</span>
-              <span>•</span>
-              <span>High Schools</span>
-              <span>•</span>
-              <span>Research Labs</span>
-              <span>•</span>
-              <span>Study Groups</span>
-            </div>
-          </div>
-        )}
+
       </div>
 
       {/* Features Section - Similar to remove.bg's approach */}
@@ -798,7 +803,23 @@ export default function Home() {
         </div>
       )}
 
-
+      {/* Trust Indicators - Cleaner */}
+      {currentStep === 'upload' && (
+        <div className="max-w-5xl mx-auto px-6 pb-16">
+          <div className="text-center">
+            <p className="text-gray-500 text-xs mb-3 uppercase tracking-wide">Trusted by students at</p>
+            <div className="flex justify-center items-center gap-6 text-gray-600 text-sm">
+              <span>Universities</span>
+              <span>•</span>
+              <span>High Schools</span>
+              <span>•</span>
+              <span>Research Labs</span>
+              <span>•</span>
+              <span>Study Groups</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="max-w-5xl mx-auto px-6 pb-12">
@@ -1004,6 +1025,12 @@ export default function Home() {
           loadUserUsage()
           setShowPricingModal(false)
         }}
+      />
+      
+      {/* Next Steps Modal */}
+      <NextStepsModal 
+        isOpen={showNextStepsModal}
+        onClose={() => setShowNextStepsModal(false)}
       />
     </div>
   )

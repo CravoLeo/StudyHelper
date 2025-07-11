@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { Crown, User, Calendar, RefreshCw, CreditCard } from 'lucide-react'
+import { Crown, User, Calendar, RefreshCw, CreditCard, Rocket } from 'lucide-react'
 import { PRICING_PLANS } from '@/lib/database'
 import PricingModal from '@/components/PricingModal'
+import NextStepsModal from '@/components/NextStepsModal'
 
 interface UserUsage {
   uses_remaining: number
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [usage, setUsage] = useState<UserUsage | null>(null)
   const [loading, setLoading] = useState(true)
   const [showPricingModal, setShowPricingModal] = useState(false)
+  const [showNextStepsModal, setShowNextStepsModal] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -161,6 +163,13 @@ export default function Dashboard() {
                 {isUnlimited ? 'Manage Plan' : 'Buy Credits'}
               </button>
               <button
+                onClick={() => setShowNextStepsModal(true)}
+                className="bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Rocket size={20} />
+                What's Next?
+              </button>
+              <button
                 onClick={() => window.location.href = '/'}
                 className="bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
               >
@@ -236,6 +245,12 @@ export default function Dashboard() {
           setShowPricingModal(false)
           refreshUsage()
         }}
+      />
+      
+      {/* Next Steps Modal */}
+      <NextStepsModal 
+        isOpen={showNextStepsModal}
+        onClose={() => setShowNextStepsModal(false)}
       />
     </div>
   )
