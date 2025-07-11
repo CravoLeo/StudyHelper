@@ -17,16 +17,16 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: [
+value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://*.clerk.accounts.dev https://*.clerk.dev",
-              "style-src 'self' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https: data:",
+              "style-src 'self' 'unsafe-inline' https: data:",
               "img-src 'self' data: blob: https:",
-              "font-src 'self' data:",
-              "connect-src 'self' https://api.openai.com https://*.supabase.co https://api.stripe.com https://*.clerk.accounts.dev https://*.clerk.dev",
-              "worker-src 'self' blob:",
-              "child-src 'self' blob:",
-              "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+              "font-src 'self' data: https:",
+              "connect-src 'self' https:",
+              "worker-src 'self' blob: data:",
+              "child-src 'self' blob: data:",
+              "frame-src 'self' https:",
               "object-src 'none'",
               "base-uri 'self'"
             ].join('; ')
