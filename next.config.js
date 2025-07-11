@@ -9,32 +9,32 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  async headers() {
-    return [
-      {
-        // Apply CSP headers to all routes
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https: data:",
-              "style-src 'self' 'unsafe-inline' https: data:",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https:",
-              "connect-src 'self' https:",
-              "worker-src 'self' blob: data:",
-              "child-src 'self' blob: data:",
-              "frame-src 'self' https:",
-              "object-src 'none'",
-              "base-uri 'self'"
-            ].join('; ')
-          }
-        ]
-      }
-    ]
-  },
+    // Temporarily disabled CSP to fix OCR issues
+  // async headers() {
+  //   return [
+  //     {
+  //       source: '/(.*)',
+  //       headers: [
+  //         {
+  //           key: 'Content-Security-Policy',
+  //           value: [
+  //             "default-src 'self'",
+  //             "script-src 'self' 'unsafe-eval' 'unsafe-inline' https: data:",
+  //             "style-src 'self' 'unsafe-inline' https: data:",
+  //             "img-src 'self' data: blob: https:",
+  //             "font-src 'self' data: https:",
+  //             "connect-src 'self' https:",
+  //             "worker-src 'self' blob: data:",
+  //             "child-src 'self' blob: data:",
+  //             "frame-src 'self' https:",
+  //             "object-src 'none'",
+  //             "base-uri 'self'"
+  //           ].join('; ')
+  //         }
+  //       ]
+  //     }
+  //   ]
+  // },
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Handle Tesseract.js worker files

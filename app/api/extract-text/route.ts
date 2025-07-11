@@ -6,6 +6,8 @@ import { canUserMakeRequest, decrementUserUsage } from '@/lib/database'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+export const maxDuration = 30 // Maximum 30 seconds for Vercel
 
 // Helper function to create a timeout promise
 const createTimeout = (ms: number) => {
@@ -61,10 +63,14 @@ export async function POST(request: NextRequest) {
       demoMode: demoMode
     })
 
-    // Check file size limit (15MB)
-    if (file.size > 15 * 1024 * 1024) {
+    // Check file size limit (5MB for images, 15MB for PDFs to ensure serverless compatibility)
+    const maxSize = file.type.startsWith('image/') ? 5 * 1024 * 1024 : 15 * 1024 * 1024
+    if (file.size > maxSize) {
       console.log('❌ File too large:', file.size, 'bytes')
-      return NextResponse.json({ error: 'File too large. Maximum size is 15MB.' }, { status: 400 })
+      const maxSizeMB = file.type.startsWith('image/') ? '5MB' : '15MB'
+      return NextResponse.json({ 
+        error: `File too large. Maximum size for ${file.type.startsWith('image/') ? 'images' : 'PDFs'} is ${maxSizeMB}. For better OCR results with large images, try converting to PDF first.` 
+      }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
@@ -96,24 +102,22 @@ export async function POST(request: NextRequest) {
         console.log('🔧 Creating Tesseract worker with optimized config...')
         const startTime = Date.now()
         
-        // Use CSP-compatible settings for serverless environment
+        // Serverless-optimized configuration
         worker = await createWorker('eng', 1, {
           logger: m => {
-            if (m.status === 'recognizing text') {
-              console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`)
-            }
+            console.log(`OCR Status: ${m.status} - Progress: ${Math.round(m.progress * 100)}%`)
           },
-          cachePath: '/tmp', // Use tmp directory for cache
-          gzip: false, // Disable gzip to avoid CSP issues
-          cacheMethod: 'write' // Use write method for better compatibility
+          cachePath: '/tmp',
+          cacheMethod: 'write',
+          gzip: false
         })
         
         // Worker configured with default settings for better serverless compatibility
         
         console.log('✅ Worker created in', Date.now() - startTime, 'ms')
         
-        // Reduced timeout to 45 seconds for better serverless performance
-        const ocrTimeout = 45000 // 45 seconds
+        // Reduced timeout to 25 seconds for Vercel limitations
+        const ocrTimeout = 25000 // 25 seconds (Vercel has 30s max)
         console.log('🔍 Starting OCR recognition with', ocrTimeout/1000, 'second timeout...')
         
         const ocrStartTime = Date.now()
