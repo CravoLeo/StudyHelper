@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         console.log('🔧 Creating Tesseract worker with optimized config...')
         const startTime = Date.now()
         
-        // Use more conservative settings for serverless environment
+        // Use CSP-compatible settings for serverless environment
         worker = await createWorker('eng', 1, {
           logger: m => {
             if (m.status === 'recognizing text') {
@@ -104,8 +104,8 @@ export async function POST(request: NextRequest) {
             }
           },
           cachePath: '/tmp', // Use tmp directory for cache
-          workerPath: '/node_modules/tesseract.js/dist/worker.min.js',
-          corePath: '/node_modules/tesseract.js/dist/tesseract-core.wasm.js'
+          gzip: false, // Disable gzip to avoid CSP issues
+          cacheMethod: 'write' // Use write method for better compatibility
         })
         
         // Worker configured with default settings for better serverless compatibility
