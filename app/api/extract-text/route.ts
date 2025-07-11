@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createWorker } from 'tesseract.js'
+import { createWorker, Worker } from 'tesseract.js'
 import pdfParse from 'pdf-parse'
 import { auth } from '@clerk/nextjs/server'
 import { canUserMakeRequest, decrementUserUsage } from '@/lib/database'
@@ -90,22 +90,47 @@ export async function POST(request: NextRequest) {
       console.log('🔍 Processing image file with OCR...')
       console.log('📊 Image details - Type:', file.type, 'Size:', (file.size / 1024 / 1024).toFixed(2), 'MB')
       
-      let worker = null
+      let worker: Worker | null = null
       try {
-        // Create worker with default configuration
-        console.log('🔧 Creating Tesseract worker with default config...')
+        // Create worker with optimized configuration for serverless
+        console.log('🔧 Creating Tesseract worker with optimized config...')
         const startTime = Date.now()
         
-        worker = await createWorker('eng')
+        // Use more conservative settings for serverless environment
+        worker = await createWorker('eng', 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`)
+            }
+          },
+          cachePath: '/tmp', // Use tmp directory for cache
+          workerPath: '/node_modules/tesseract.js/dist/worker.min.js',
+          corePath: '/node_modules/tesseract.js/dist/tesseract-core.wasm.js'
+        })
+        
+        // Worker configured with default settings for better serverless compatibility
         
         console.log('✅ Worker created in', Date.now() - startTime, 'ms')
         
-        // Reduced timeout to 60 seconds for better UX
-        const ocrTimeout = 60000 // 1 minute
+        // Reduced timeout to 45 seconds for better serverless performance
+        const ocrTimeout = 45000 // 45 seconds
         console.log('🔍 Starting OCR recognition with', ocrTimeout/1000, 'second timeout...')
         
         const ocrStartTime = Date.now()
-        const ocrPromise = worker.recognize(buffer)
+        
+        // Create a more robust OCR promise
+        const ocrPromise = new Promise(async (resolve, reject) => {
+          try {
+            if (!worker) {
+              reject(new Error('Worker not initialized'))
+              return
+            }
+            const result = await worker.recognize(buffer)
+            resolve(result)
+          } catch (error) {
+            reject(error)
+          }
+        })
         
         const timeoutPromise = createTimeout(ocrTimeout)
         
@@ -117,10 +142,20 @@ export async function POST(request: NextRequest) {
         console.log('⏱️ OCR completed in', ocrDuration, 'ms')
         
         if (result && typeof result === 'object' && result !== null && 'data' in result) {
-          const ocrResult = result as { data: { text: string } }
+          const ocrResult = result as { data: { text: string; confidence: number } }
           extractedText = ocrResult.data.text
           console.log('✅ OCR text extracted, length:', extractedText.length, 'characters')
+          console.log('📊 OCR confidence:', ocrResult.data.confidence)
           console.log('📝 Preview:', extractedText.substring(0, 100) + '...')
+          
+          // Check if OCR confidence is too low
+          if (ocrResult.data.confidence < 30) {
+            console.log('⚠️ Low OCR confidence:', ocrResult.data.confidence)
+            return NextResponse.json({ 
+              error: 'Image quality too low for reliable text extraction. Please try with a clearer, higher-resolution image.',
+              confidence: ocrResult.data.confidence
+            }, { status: 400 })
+          }
         } else {
           console.log('❌ Invalid OCR result structure:', typeof result)
           throw new Error('OCR processing returned invalid result')
@@ -132,28 +167,34 @@ export async function POST(request: NextRequest) {
         // Provide more specific error messages
         if (error instanceof Error) {
           if (error.message.includes('timeout')) {
-            console.log('⏰ OCR timed out after 60 seconds')
+            console.log('⏰ OCR timed out after 45 seconds')
             return NextResponse.json({ 
-              error: 'Image processing timed out after 60 seconds. Please try with a smaller or clearer image.' 
+              error: 'Image processing timed out. Please try with a smaller or clearer image, or convert to PDF first.' 
             }, { status: 408 })
           }
           if (error.message.includes('memory') || error.message.includes('Memory')) {
             console.log('💾 Memory error during OCR')
             return NextResponse.json({ 
-              error: 'Image too large to process. Please try with a smaller image.' 
+              error: 'Image too large to process. Please resize to under 5MB or convert to PDF.' 
             }, { status: 413 })
           }
           if (error.message.includes('worker') || error.message.includes('Worker')) {
             console.log('🔧 Worker initialization error')
             return NextResponse.json({ 
-              error: 'OCR service temporarily unavailable. Please try again in a moment.' 
+              error: 'OCR service temporarily unavailable. Please try again in a moment or convert to PDF.' 
+            }, { status: 503 })
+          }
+          if (error.message.includes('wasm') || error.message.includes('WASM')) {
+            console.log('🔧 WASM loading error')
+            return NextResponse.json({ 
+              error: 'OCR engine failed to load. Please try again or convert your image to PDF.' 
             }, { status: 503 })
           }
         }
         
         console.log('🔍 General OCR error, might be image quality or format issue')
         return NextResponse.json({ 
-          error: 'Failed to extract text from image. Please ensure the image contains clear, readable text.' 
+          error: 'Failed to extract text from image. For better results, try converting to PDF or using a clearer image.' 
         }, { status: 500 })
       } finally {
         // Always terminate the worker
