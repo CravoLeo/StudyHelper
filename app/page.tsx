@@ -35,12 +35,12 @@ const translations = {
     heroTitle: 'Transforme Documentos em',
     heroSubtitle: 'Materiais de Estudo',
     heroTagline: '100% Automático e Seguro',
-    heroDescription: 'Carregue PDFs ou imagens e obtenha resumos e questões de estudo com IA em segundos. Nenhum trabalho manual necessário.',
+    heroDescription: 'Carregue PDFs e obtenha resumos e questões de estudo com IA em segundos. Nenhum trabalho manual necessário.',
     
     // Mode toggle
     demoMode: '🎭 MODO DEMO',
     openaiMode: '🚀 MODO OPENAI',
-    demoModeDesc: 'Gratuito • Usa dados simulados',
+    demoModeDesc: 'Grátis • Usa dados simulados',
     openaiModeDesc: 'Usa créditos • IA real',
     
     // Actions
@@ -60,13 +60,13 @@ const translations = {
     aiPoweredDesc: 'IA avançada analisa seus documentos e cria resumos abrangentes e questões de estudo',
     
     multipleFormatsTitle: 'Múltiplos Formatos',
-    multipleFormatsDesc: 'Funciona com PDFs, imagens e vários tipos de documento. Carregue e obtenha resultados instantaneamente',
+    multipleFormatsDesc: 'Funciona em PDFs. Carregue e obtenha resultados instantaneamente',
     
     exportReadyTitle: 'Pronto para Exportar',
     exportReadyDesc: 'Exporte seus materiais de estudo como arquivos de texto ou PDFs. Perfeito para compartilhar e imprimir',
     
     // Trust indicators
-    trustedBy: 'Confiado por estudantes de',
+    trustedBy: 'Utilizado por estudantes de',
     universities: 'Universidades',
     highSchools: 'Escolas Secundárias',
     researchLabs: 'Laboratórios de Pesquisa',
@@ -123,7 +123,7 @@ const translations = {
     heroTitle: 'Turn Documents into',
     heroSubtitle: 'Study Materials',
     heroTagline: '100% Automatic & Secure',
-    heroDescription: 'Upload PDFs or images and get AI-powered summaries and study questions in seconds. No manual work required.',
+    heroDescription: 'Upload PDFs and get AI-powered summaries and study questions in seconds. No manual work required.',
     
     // Mode toggle
     demoMode: '🎭 DEMO MODE',
@@ -148,7 +148,7 @@ const translations = {
     aiPoweredDesc: 'Advanced AI analyzes your documents and creates comprehensive summaries and study questions',
     
     multipleFormatsTitle: 'Multiple Formats',
-    multipleFormatsDesc: 'Works with PDFs, images, and various document types. Upload and get results instantly',
+    multipleFormatsDesc: 'Works with PDFs. Upload and get results instantly',
     
     exportReadyTitle: 'Export Ready',
     exportReadyDesc: 'Export your study materials as text files or PDFs. Perfect for sharing and printing',
@@ -755,9 +755,9 @@ export default function Home() {
               {userUsage.plan_type === 'unlimited' ? (
                 <button
                   onClick={handleManageSubscription}
-                  className="px-3 py-1 bg-green-500 text-black rounded-lg text-sm font-semibold hover:bg-green-400 transition-colors ml-2"
+                  className="px-3 py-1 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-400 transition-colors ml-2"
                 >
-                  Atualizar
+                  Cancelar
                 </button>
               ) : (
                 <button
@@ -776,6 +776,15 @@ export default function Home() {
             <Rocket className="w-5 h-5" />
             O que vem a seguir?
           </button>
+          {!isSignedIn && (
+            <SignInButton mode="modal">
+              <button
+                className="px-5 py-1.5 bg-green-500 text-black rounded-lg text-base font-bold hover:bg-green-400 transition-colors ml-2"
+              >
+                Entrar
+              </button>
+            </SignInButton>
+          )}
           {isSignedIn && (
             <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm ml-2">
               <UserButton />

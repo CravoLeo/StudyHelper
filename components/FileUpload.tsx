@@ -17,8 +17,8 @@ const translations = {
     dropFileHere: 'Solte seu arquivo aqui',
     uploadDocument: 'Carregue seu documento',
     dragDropText: 'Arraste e solte ou clique para selecionar • Apenas PDF • Máx 15MB',
-    pdfOnly: 'Apenas PDF',
-    imagesConvert: 'Imagens: Converter para PDF'
+    pdfOnly: 'PDF',
+    imagesConvert: 'Imagens: Em desenvolvimento'
   },
   en: {
     selectValidPdf: 'Please select a valid PDF file',
@@ -27,7 +27,7 @@ const translations = {
     dropFileHere: 'Drop your file here',
     uploadDocument: 'Upload your document',
     dragDropText: 'Drag & drop or click to select • PDF only • Max 15MB',
-    pdfOnly: 'PDF Only',
+    pdfOnly: 'PDF',
     imagesConvert: 'Images: Convert to PDF'
   }
 }
