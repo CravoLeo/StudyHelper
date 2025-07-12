@@ -8,7 +8,7 @@ import AIGeneration from '@/components/AIGeneration'
 import PricingModal from '@/components/PricingModal'
 import NextStepsModal from '@/components/NextStepsModal'
 import MaintenanceMode from '@/components/MaintenanceMode'
-import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket, Globe } from 'lucide-react'
+import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket, Globe, Menu, X } from 'lucide-react'
 import { SavedDocument, isLocalMode } from '@/lib/supabase'
 import { saveDocument, getDocuments, deleteDocument, UserUsage } from '@/lib/database'
 
@@ -225,6 +225,9 @@ export default function Home() {
   // Language state
   const [language, setLanguage] = useState<'pt' | 'en'>('pt') // Default to Portuguese
   const t = translations[language]
+  
+  // Mobile navigation state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Simplified maintenance mode check - only run on client
   useEffect(() => {
@@ -430,6 +433,27 @@ export default function Home() {
       window.removeEventListener('refreshUsage', handleRefreshUsage)
     }
   }, [loadUserUsage])
+
+  // Close mobile menu when clicking outside or pressing escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false)
+      }
+    }
+
+    if (mobileMenuOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'unset'
+    }
+  }, [mobileMenuOpen])
 
   // Handle successful payment (fallback for webhook issues in local development)
   useEffect(() => {
@@ -685,121 +709,288 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black flex flex-col">
       {/* Top Navigation */}
-      <nav className="relative z-10 flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
+      <nav className="relative z-10 flex items-center justify-between px-4 md:px-6 py-3 md:py-4 max-w-7xl mx-auto w-full">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-black" />
           </div>
           <span className="text-xl font-bold text-white">StudyHelper</span>
         </div>
-        
-        {/* Center Navigation Links */}
-        <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
-          <button 
+
+        {/* Center: Navigation Links (Desktop only) */}
+        <div className="hidden md:flex items-center gap-2 text-sm font-medium">
+          <button
             onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-            className="hover:text-white transition-colors"
+            className="px-3 py-1 rounded-lg text-gray-200 hover:text-white hover:bg-gray-800 transition-colors"
           >
             {t.features}
           </button>
-          <button onClick={showHistoryModal} className="hover:text-white transition-colors">
-            {t.history} {savedDocuments.length > 0 && (
-              <span className="ml-1 bg-green-500 text-black px-2 py-1 rounded-full text-xs font-medium">
-                {savedDocuments.length}
-              </span>
+          <button
+            onClick={showHistoryModal}
+            className="px-3 py-1 rounded-lg text-gray-200 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-1"
+          >
+            {t.history}
+            {savedDocuments.length > 0 && (
+              <span className="ml-1 bg-green-600 text-white rounded-full px-2 py-0.5 text-xs font-bold">{savedDocuments.length}</span>
             )}
           </button>
-          
-          {/* Language Switcher */}
-          <button 
+          <button
             onClick={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-gray-800 text-white font-bold flex items-center gap-2 shadow hover:bg-gray-700 transition-colors"
           >
-            <Globe className="w-4 h-4" />
-            <span className="font-medium">
-              {language === 'pt' ? 'PT' : 'EN'}
-            </span>
+            <Globe className="w-5 h-5" />
+            {language === 'pt' ? 'PT' : 'EN'}
           </button>
         </div>
-        
-        {/* Right Side - Auth & User Info */}
-        <div className="flex items-center gap-3">
-          {isSignedIn ? (
-            <div className="flex items-center gap-3">
-              {/* Usage Display */}
-              {userUsage && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 rounded-lg text-sm">
-                  <Zap className="w-4 h-4 text-green-400" />
-                  <span className="text-white font-medium">
+
+        {/* Right: Usage, Plan, Next Steps, Profile (Desktop only) */}
+        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+          {isSignedIn && userUsage && (
+            <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-1.5">
+              <Zap className="w-5 h-5 text-green-400" />
+              <span className="text-white font-semibold text-sm">{userUsage.uses_remaining === -1 ? t.unlimited : `${userUsage.uses_remaining} usos`}</span>
+              {userUsage.plan_type === 'unlimited' ? (
+                <button
+                  onClick={handleManageSubscription}
+                  className="px-3 py-1 bg-green-500 text-black rounded-lg text-sm font-semibold hover:bg-green-400 transition-colors ml-2"
+                >
+                  Atualizar
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowPricingModal(true)}
+                  className="px-3 py-1 bg-green-500 text-black rounded-lg text-sm font-semibold hover:bg-green-400 transition-colors ml-2"
+                >
+                  Atualizar
+                </button>
+              )}
+            </div>
+          )}
+          <button
+            onClick={() => setShowNextStepsModal(true)}
+            className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-base font-bold hover:bg-blue-500 transition-colors ml-2 flex items-center gap-2 shadow"
+          >
+            <Rocket className="w-5 h-5" />
+            O que vem a seguir?
+          </button>
+          {isSignedIn && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm ml-2">
+              <UserButton />
+              <span className="text-white font-medium ml-1">{user?.username || user?.firstName}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Profile + Hamburger (Mobile only) */}
+        <div className="flex md:hidden items-center gap-3 flex-shrink-0">
+          {isSignedIn && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm">
+              <UserButton />
+            </div>
+          )}
+          {/* Hamburger menu - Mobile only */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+      </nav>
+
+      {/* Usage Bar - Mobile only */}
+      {isSignedIn && userUsage && (
+        <div className="md:hidden bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 animate-fade-in">
+          <div className="px-4 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <div className="text-white font-semibold">
                     {userUsage.uses_remaining === -1 
                       ? t.unlimited 
-                      : `${userUsage.uses_remaining} ${t.uses}`}
-                  </span>
+                      : `${userUsage.uses_remaining} ${t.uses} ${t.usesLeft}`}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {userUsage.plan_type === 'unlimited' ? t.unlimitedPlan : 'Current Plan'}
+                  </div>
                 </div>
-              )}
-              
-              {/* Plan Management Button */}
-              {userUsage && userUsage.plan_type === 'unlimited' ? (
+              </div>
+              {/* Quick action button */}
+              {userUsage.plan_type === 'unlimited' ? (
                 <button 
                   onClick={handleManageSubscription}
-                  className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  className="px-3 py-1.5 bg-purple-600/20 text-purple-300 rounded-lg text-sm font-medium border border-purple-600/30 hover:bg-purple-600/30 transition-all active:scale-95"
                 >
-                  <CreditCard className="w-4 h-4" />
                   {t.manageplan}
                 </button>
               ) : (
                 <button 
                   onClick={() => setShowPricingModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium text-sm"
+                  className="px-3 py-1.5 bg-green-500/20 text-green-300 rounded-lg text-sm font-medium border border-green-500/30 hover:bg-green-500/30 transition-all active:scale-95"
                 >
-                  <CreditCard className="w-4 h-4" />
                   {t.upgrade}
                 </button>
               )}
-              
-              {/* What's Next Button */}
-              <button 
-                onClick={() => setShowNextStepsModal(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
-              >
-                <Rocket className="w-4 h-4" />
-                {t.whatsnext}
-              </button>
-              
-              {/* User Button */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm">
-                <UserButton />
-                <div className="hidden sm:block">
-                  <div className="text-xs text-gray-300">
-                    {user.firstName || user.emailAddresses[0].emailAddress.split('@')[0]}
-                  </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Navigation Menu - Full Screen */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black animate-fade-in"
+             onClick={() => setMobileMenuOpen(false)}>
+          <div className="flex flex-col h-full w-full animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-gray-900/95 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-black" />
                 </div>
+                <span className="text-xl font-bold text-white">StudyHelper</span>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Navigation Items */}
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-900/50">
+              <div className="space-y-3">
+                {/* Features */}
+                <button
+                  onClick={() => {
+                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center gap-4 w-full p-5 bg-gray-800/80 hover:bg-gray-700/80 text-white rounded-xl transition-all active:scale-95 backdrop-blur-sm"
+                >
+                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-green-400" />
+                  </div>
+                  <span className="text-xl font-semibold">{t.features}</span>
+                </button>
+                
+                {/* History */}
+                <button
+                  onClick={() => {
+                    showHistoryModal()
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center justify-between w-full p-5 bg-gray-800/80 hover:bg-gray-700/80 text-white rounded-xl transition-all active:scale-95 backdrop-blur-sm"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <History className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <span className="text-xl font-semibold">{t.history}</span>
+                  </div>
+                  {savedDocuments.length > 0 && (
+                    <span className="bg-green-500 text-black px-3 py-1 rounded-full text-sm font-bold">
+                      {savedDocuments.length}
+                    </span>
+                  )}
+                </button>
+                
+                {/* What's Next */}
+                <button
+                  onClick={() => {
+                    setShowNextStepsModal(true)
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center gap-4 w-full p-5 bg-gray-800/80 hover:bg-gray-700/80 text-white rounded-xl transition-all active:scale-95 backdrop-blur-sm"
+                >
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <Rocket className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <span className="text-xl font-semibold">{t.whatsnext}</span>
+                </button>
+                
+                {/* Language Switcher */}
+                <button
+                  onClick={() => {
+                    setLanguage(language === 'pt' ? 'en' : 'pt')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center justify-between w-full p-5 bg-gray-800/80 hover:bg-gray-700/80 text-white rounded-xl transition-all active:scale-95 backdrop-blur-sm"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <Globe className="w-5 h-5 text-green-400" />
+                    </div>
+                    <span className="text-xl font-semibold">{t.language}</span>
+                  </div>
+                  <span className="text-lg text-gray-300 font-bold">
+                    {language === 'pt' ? 'PT' : 'EN'}
+                  </span>
+                </button>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowNextStepsModal(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
-              >
-                <Rocket className="w-4 h-4" />
-                {t.whatsnext}
-              </button>
-              <SignInButton mode="modal">
-                <button className="px-6 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium text-sm">
-                  {t.signin}
-                </button>
-              </SignInButton>
+            
+            {/* Bottom Section - User Actions */}
+            <div className="p-4 border-t border-gray-800 bg-gray-900/95 backdrop-blur-sm">
+              <div className="space-y-3">
+                {isSignedIn ? (
+                  <>
+                    {/* Plan Management */}
+                    {userUsage && userUsage.plan_type === 'unlimited' ? (
+                      <button 
+                        onClick={() => {
+                          handleManageSubscription()
+                          setMobileMenuOpen(false)
+                        }}
+                        className="flex items-center justify-center gap-3 w-full p-5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-all active:scale-95 font-semibold text-lg"
+                      >
+                        <CreditCard className="w-6 h-6" />
+                        {t.manageplan}
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          setShowPricingModal(true)
+                          setMobileMenuOpen(false)
+                        }}
+                        className="flex items-center justify-center gap-3 w-full p-5 bg-green-500 text-black rounded-xl hover:bg-green-400 transition-all active:scale-95 font-semibold text-lg"
+                      >
+                        <CreditCard className="w-6 h-6" />
+                        {t.upgrade}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="space-y-3">
+                    <SignInButton mode="modal">
+                      <button 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full p-5 bg-green-500 text-black rounded-xl hover:bg-green-400 transition-all active:scale-95 font-semibold text-lg"
+                      >
+                        {t.signin}
+                      </button>
+                    </SignInButton>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </nav>
+      )}
 
       {/* Status Messages */}
       {showStatusMessage && isLocalMode && (
-        <div className="mb-4 max-w-4xl mx-auto px-6">
+        <div className="mb-3 md:mb-4 max-w-4xl mx-auto px-4 md:px-6">
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
@@ -818,7 +1009,7 @@ export default function Home() {
       )}
 
       {showStatusMessage && !isLocalMode && (
-        <div className="mb-4 max-w-4xl mx-auto px-6">
+        <div className="mb-3 md:mb-4 max-w-4xl mx-auto px-4 md:px-6">
           <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
@@ -836,29 +1027,29 @@ export default function Home() {
         </div>
       )}
 
-      {/* Hero Section - Similar to remove.bg */}
-      <div className="relative z-10 max-w-4xl mx-auto px-6 py-16 text-center">
+      {/* Hero Section - Mobile Optimized */}
+      <div className="relative z-10 w-full max-w-4xl mx-auto px-4 md:px-6 pt-4 md:pt-8 lg:pt-16 text-center">
         {/* Main Headline */}
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
           {t.heroTitle}
           <br />
           <span className="text-green-400">{t.heroSubtitle}</span>
           <br />
-          {t.heroTagline}
+          <span className="text-2xl sm:text-3xl md:text-4xl">{t.heroTagline}</span>
         </h1>
         
         {/* Subheadline */}
-        <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-2xl mx-auto">
+        <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 md:mb-12 max-w-2xl mx-auto">
           {t.heroDescription}
         </p>
 
         {/* Mode Toggle */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-center space-x-3">
+        <div className="flex justify-center mb-8 md:mb-12">
+          <div className="bg-gray-900 rounded-lg px-4 py-5 border border-gray-700 w-full max-w-xs mx-auto flex items-center justify-center">
+            <div className="flex flex-col items-center w-full">
               <button
                 onClick={toggleDemoMode}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors mb-2 ${
                   demoMode ? 'bg-blue-500' : 'bg-green-500'
                 }`}
               >
@@ -868,24 +1059,22 @@ export default function Home() {
                   }`}
                 />
               </button>
-              <div className="flex flex-col">
-                <span className={`text-sm font-medium ${
-                  demoMode ? 'text-blue-300' : 'text-green-300'
-                }`}>
-                  {demoMode ? t.demoMode : t.openaiMode}
-                </span>
-                <span className={`text-xs ${
-                  demoMode ? 'text-blue-400' : 'text-green-400'
-                }`}>
-                  {demoMode ? t.demoModeDesc : t.openaiModeDesc}
-                </span>
-              </div>
+              <span className={`text-base font-semibold ${
+                demoMode ? 'text-blue-300' : 'text-green-300'
+              }`}>
+                {demoMode ? t.demoMode : t.openaiMode}
+              </span>
+              <span className={`text-xs mt-1 ${
+                demoMode ? 'text-blue-400' : 'text-green-400'
+              }`}>
+                {demoMode ? t.demoModeDesc : t.openaiModeDesc}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Main Upload Area or CTA */}
-        <div className="mb-16">
+        <div className="mb-8 md:mb-16">
           {currentStep === 'upload' && (
             <div className="max-w-xl mx-auto">
               <FileUpload onFileUpload={handleFileUpload} language={language} />
@@ -895,7 +1084,7 @@ export default function Home() {
           {currentStep !== 'upload' && (
             <button
               onClick={resetApp}
-              className="px-12 py-4 bg-green-500 text-black rounded-lg font-semibold text-lg hover:bg-green-400 transition-all duration-200 shadow-lg"
+              className="px-8 sm:px-12 py-3 sm:py-4 bg-green-500 text-black rounded-lg font-semibold text-base sm:text-lg hover:bg-green-400 transition-all duration-200 shadow-lg"
             >
               {t.startNewDocument}
             </button>
@@ -905,8 +1094,8 @@ export default function Home() {
         {/* Progress Steps - Cleaner */}
         {currentStep !== 'upload' && (
           <div className="flex justify-center mb-12">
-            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-              <div className="flex items-center space-x-4">
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 max-w-full overflow-x-auto">
+              <div className="flex items-center space-x-4 min-w-max">
                 <div className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all bg-green-500/20 text-green-300">
                   <Upload size={16} />
                   <span className="text-sm font-medium">{t.upload}</span>
@@ -948,19 +1137,19 @@ export default function Home() {
 
       </div>
 
-      {/* Features Section - Similar to remove.bg's approach */}
+      {/* Features Section - Mobile Optimized */}
       {currentStep === 'upload' && (
-        <div id="features" className="max-w-5xl mx-auto px-6 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-white mb-3">
+        <div id="features" className="w-full max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8 lg:py-16">
+          <div className="text-center mb-6 md:mb-8 lg:mb-12">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-3">
               {t.featuresTitle}
             </h2>
-            <p className="text-gray-400 text-lg">
+            <p className="text-gray-400 text-base sm:text-lg">
               {t.featuresSubtitle}
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-8 h-8 text-green-400" />
@@ -1000,14 +1189,14 @@ export default function Home() {
         </div>
       )}
 
-      {/* Trust Indicators - Cleaner */}
+      {/* Trust Indicators - Always at the bottom */}
       {currentStep === 'upload' && (
-        <div className="max-w-5xl mx-auto px-6 pb-16">
+        <div className="w-full px-2 md:px-6 pb-6 md:pb-8">
           <div className="text-center">
             <p className="text-gray-500 text-xs mb-3 uppercase tracking-wide">
               {t.trustedBy}
             </p>
-            <div className="flex justify-center items-center gap-6 text-gray-600 text-sm">
+            <div className="flex flex-wrap justify-center items-center gap-1 md:gap-4 text-gray-600 text-sm mt-2">
               <span>{t.universities}</span>
               <span>•</span>
               <span>{t.highSchools}</span>
@@ -1021,7 +1210,7 @@ export default function Home() {
       )}
 
       {/* Main Content Area */}
-      <div className="max-w-5xl mx-auto px-6 pb-12">
+      <div className="flex-1 max-w-5xl mx-auto px-6 pb-8 w-full">
         {/* Content Steps */}
         <div className="space-y-6">
           {currentStep === 'extract' && uploadedFile && (
