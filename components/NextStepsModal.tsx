@@ -6,6 +6,7 @@ import { X, ImageIcon, FileStack, Brain, Target } from 'lucide-react'
 interface NextStepsModalProps {
   isOpen: boolean
   onClose: () => void
+  t: any // translation object
 }
 
 interface Feature {
@@ -18,67 +19,64 @@ interface Feature {
   features: string[]
 }
 
-export default function NextStepsModal({ isOpen, onClose }: NextStepsModalProps) {
-
+export default function NextStepsModal({ isOpen, onClose, t }: NextStepsModalProps) {
   if (!isOpen) return null
 
   const upcomingFeatures: Feature[] = [
     {
       id: 'image-ocr',
-      title: 'Image OCR',
-      description: 'Process images and scanned documents',
+      title: t.nextSteps_imageOCR_title,
+      description: t.nextSteps_imageOCR_desc,
       icon: ImageIcon,
       color: 'blue',
-      status: 'In Development',
+      status: t.nextSteps_inDevelopment,
       features: [
-        'Scan text from photos',
-        'Support for JPG, PNG formats',
-        'High accuracy OCR processing',
-        'Batch image processing'
+        t.nextSteps_imageOCR_feat1,
+        t.nextSteps_imageOCR_feat2,
+        t.nextSteps_imageOCR_feat3,
+        t.nextSteps_imageOCR_feat4
       ]
     },
     {
       id: 'batch-processing',
-      title: 'Batch Processing',
-      description: 'Upload multiple documents at once',
+      title: t.nextSteps_batch_title,
+      description: t.nextSteps_batch_desc,
       icon: FileStack,
       color: 'green',
       features: [
-        'Process up to 10 files at once',
-        'Bulk summary generation',
-        'Combined study materials',
-        'Export all results together'
+        t.nextSteps_batch_feat1,
+        t.nextSteps_batch_feat2,
+        t.nextSteps_batch_feat3,
+        t.nextSteps_batch_feat4
       ]
     },
     {
       id: 'advanced-ai',
-      title: 'Advanced AI Features',
-      description: 'More intelligent document analysis',
+      title: t.nextSteps_ai_title,
+      description: t.nextSteps_ai_desc,
       icon: Brain,
       color: 'purple',
       features: [
-        'Subject-specific summaries',
-        'Difficulty-based questions',
-        'Custom study schedules',
-        'Knowledge gap analysis'
+        t.nextSteps_ai_feat1,
+        t.nextSteps_ai_feat2,
+        t.nextSteps_ai_feat3,
+        t.nextSteps_ai_feat4
       ]
     },
     {
       id: 'smart-study',
-      title: 'Smart Study Tools',
-      description: 'Personalized learning experience',
+      title: t.nextSteps_smart_title,
+      description: t.nextSteps_smart_desc,
       icon: Target,
       color: 'orange',
       features: [
-        'Progress tracking',
-        'Spaced repetition',
-        'Performance analytics',
-        'Study reminders'
+        t.nextSteps_smart_feat1,
+        t.nextSteps_smart_feat2,
+        t.nextSteps_smart_feat3,
+        t.nextSteps_smart_feat4
       ]
     }
   ]
-
-
 
   const getColorClasses = (color: string) => {
     const colorMap = {
@@ -115,8 +113,8 @@ export default function NextStepsModal({ isOpen, onClose }: NextStepsModalProps)
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-3xl font-bold text-white">What's Next?</h2>
-            <p className="text-gray-400 mt-1">Exciting features coming to your study helper</p>
+            <h2 className="text-3xl font-bold text-white">{t.nextSteps_title}</h2>
+            <p className="text-gray-400 mt-1">{t.nextSteps_subtitle}</p>
           </div>
           <button
             onClick={onClose}
@@ -162,18 +160,14 @@ export default function NextStepsModal({ isOpen, onClose }: NextStepsModalProps)
                     </li>
                   ))}
                 </ul>
-
-
               </div>
             )
           })}
         </div>
 
-
-
         <div className="mt-8 text-center text-gray-400 text-sm">
-          <p>🚀 We're working hard to bring you these features</p>
-          <p>✨ Stay tuned for exciting updates!</p>
+          <p>{t.nextSteps_footer1}</p>
+          <p>{t.nextSteps_footer2}</p>
         </div>
       </div>
     </div>

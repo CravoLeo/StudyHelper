@@ -100,7 +100,38 @@ const translations = {
     // Language switcher
     language: 'Idioma',
     portuguese: 'Português',
-    english: 'English'
+    english: 'English',
+
+    // Next Steps Modal
+    nextSteps_title: 'O que vem a seguir?',
+    nextSteps_subtitle: 'Novos recursos incríveis chegando ao StudyHelper',
+    nextSteps_imageOCR_title: 'Reconhecimento de Imagens',
+    nextSteps_imageOCR_desc: 'Processar imagens e documentos escaneados',
+    nextSteps_inDevelopment: 'Em desenvolvimento',
+    nextSteps_imageOCR_feat1: 'Extrair texto de fotos',
+    nextSteps_imageOCR_feat2: 'Suporte a JPG, PNG',
+    nextSteps_imageOCR_feat3: 'Reconhecimento de alta precisão',
+    nextSteps_imageOCR_feat4: 'Processamento em lote de imagens',
+    nextSteps_batch_title: 'Processamento em Lote',
+    nextSteps_batch_desc: 'Carregue múltiplos documentos de uma vez',
+    nextSteps_batch_feat1: 'Processar até 10 arquivos por vez',
+    nextSteps_batch_feat2: 'Geração de resumos em massa',
+    nextSteps_batch_feat3: 'Materiais de estudo combinados',
+    nextSteps_batch_feat4: 'Exportar todos os resultados juntos',
+    nextSteps_ai_title: 'Recursos Avançados de IA',
+    nextSteps_ai_desc: 'Análise de documentos mais inteligente',
+    nextSteps_ai_feat1: 'Resumos por disciplina',
+    nextSteps_ai_feat2: 'Perguntas por dificuldade',
+    nextSteps_ai_feat3: 'Agendas de estudo personalizadas',
+    nextSteps_ai_feat4: 'Análise de lacunas de conhecimento',
+    nextSteps_smart_title: 'Ferramentas de Estudo Inteligentes',
+    nextSteps_smart_desc: 'Experiência de aprendizado personalizada',
+    nextSteps_smart_feat1: 'Acompanhamento de progresso',
+    nextSteps_smart_feat2: 'Repetição espaçada',
+    nextSteps_smart_feat3: 'Análises de desempenho',
+    nextSteps_smart_feat4: 'Lembretes de estudo',
+    nextSteps_footer1: '🚀 Estamos trabalhando para trazer esses recursos',
+    nextSteps_footer2: '✨ Fique ligado para novidades incríveis!',
   },
   en: {
     // Navigation
@@ -188,7 +219,38 @@ const translations = {
     // Language switcher
     language: 'Language',
     portuguese: 'Português',
-    english: 'English'
+    english: 'English',
+
+    // Next Steps Modal
+    nextSteps_title: "What's Next?",
+    nextSteps_subtitle: "Exciting features coming to your study helper",
+    nextSteps_imageOCR_title: "Image OCR",
+    nextSteps_imageOCR_desc: "Process images and scanned documents",
+    nextSteps_inDevelopment: "In Development",
+    nextSteps_imageOCR_feat1: "Scan text from photos",
+    nextSteps_imageOCR_feat2: "Support for JPG, PNG formats",
+    nextSteps_imageOCR_feat3: "High accuracy OCR processing",
+    nextSteps_imageOCR_feat4: "Batch image processing",
+    nextSteps_batch_title: "Batch Processing",
+    nextSteps_batch_desc: "Upload multiple documents at once",
+    nextSteps_batch_feat1: "Process up to 10 files at once",
+    nextSteps_batch_feat2: "Bulk summary generation",
+    nextSteps_batch_feat3: "Combined study materials",
+    nextSteps_batch_feat4: "Export all results together",
+    nextSteps_ai_title: "Advanced AI Features",
+    nextSteps_ai_desc: "More intelligent document analysis",
+    nextSteps_ai_feat1: "Subject-specific summaries",
+    nextSteps_ai_feat2: "Difficulty-based questions",
+    nextSteps_ai_feat3: "Custom study schedules",
+    nextSteps_ai_feat4: "Knowledge gap analysis",
+    nextSteps_smart_title: "Smart Study Tools",
+    nextSteps_smart_desc: "Personalized learning experience",
+    nextSteps_smart_feat1: "Progress tracking",
+    nextSteps_smart_feat2: "Spaced repetition",
+    nextSteps_smart_feat3: "Performance analytics",
+    nextSteps_smart_feat4: "Study reminders",
+    nextSteps_footer1: "🚀 We're working hard to bring you these features",
+    nextSteps_footer2: "✨ Stay tuned for exciting updates!",
   }
 }
 
@@ -751,20 +813,20 @@ export default function Home() {
           {isSignedIn && userUsage && (
             <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-1.5">
               <Zap className="w-5 h-5 text-green-400" />
-              <span className="text-white font-semibold text-sm">{userUsage.uses_remaining === -1 ? t.unlimited : `${userUsage.uses_remaining} usos`}</span>
+              <span className="text-white font-semibold text-sm">{userUsage.uses_remaining === -1 ? t.unlimited : `${userUsage.uses_remaining} ${t.uses}`}</span>
               {userUsage.plan_type === 'unlimited' ? (
                 <button
                   onClick={handleManageSubscription}
                   className="px-3 py-1 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-400 transition-colors ml-2"
                 >
-                  Cancelar
+                  {t.manageplan}
                 </button>
               ) : (
                 <button
                   onClick={() => setShowPricingModal(true)}
                   className="px-3 py-1 bg-green-500 text-black rounded-lg text-sm font-semibold hover:bg-green-400 transition-colors ml-2"
                 >
-                  Atualizar
+                  {t.upgrade}
                 </button>
               )}
             </div>
@@ -774,14 +836,14 @@ export default function Home() {
             className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-base font-bold hover:bg-blue-500 transition-colors ml-2 flex items-center gap-2 shadow"
           >
             <Rocket className="w-5 h-5" />
-            O que vem a seguir?
+            {t.whatsnext}
           </button>
           {!isSignedIn && (
             <SignInButton mode="modal">
               <button
                 className="px-5 py-1.5 bg-green-500 text-black rounded-lg text-base font-bold hover:bg-green-400 transition-colors ml-2"
               >
-                Entrar
+                {t.signin}
               </button>
             </SignInButton>
           )}
@@ -1435,6 +1497,7 @@ export default function Home() {
       <NextStepsModal 
         isOpen={showNextStepsModal}
         onClose={() => setShowNextStepsModal(false)}
+        t={t}
       />
     </div>
   )
