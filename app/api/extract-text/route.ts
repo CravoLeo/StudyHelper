@@ -6,8 +6,7 @@ import { canUserMakeRequest } from '@/lib/database'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-// export const runtime = 'nodejs' // Not needed for PDF-only processing
-// export const maxDuration = 30 // Not needed for PDF-only processing
+export const maxDuration = 30
 
 // Helper function to create a timeout promise - not needed for PDF-only processing
 // const createTimeout = (ms: number) => {
@@ -122,6 +121,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ text: extractedText.trim() })
   } catch (error) {
     console.error('❌ Text extraction error:', error)
+    
+    // Check if it's a payload too large error
+    if (error instanceof Error && error.message.includes('413')) {
+      return NextResponse.json({ 
+        error: 'File too large for processing. Please try a smaller file (under 15MB) or compress your PDF before uploading.' 
+      }, { status: 413 })
+    }
+    
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

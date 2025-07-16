@@ -3,6 +3,7 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['pdf-parse', 'tesseract.js']
   },
+
   typescript: {
     ignoreBuildErrors: false,
   },
