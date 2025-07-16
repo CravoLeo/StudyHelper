@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useUser, SignInButton, SignOutButton, UserButton } from '@clerk/nextjs'
+import { useUser, SignInButton, SignUpButton, SignOutButton, UserButton } from '@clerk/nextjs'
 import FileUpload from '@/components/FileUpload'
 import TextExtraction from '@/components/TextExtraction'
 import AIGeneration from '@/components/AIGeneration'
@@ -11,6 +11,7 @@ import MaintenanceMode from '@/components/MaintenanceMode'
 import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket, Globe, Menu, X } from 'lucide-react'
 import { SavedDocument, isLocalMode } from '@/lib/supabase'
 import { saveDocument, getDocuments, deleteDocument, UserUsage } from '@/lib/database'
+import { checkFreeTrialStatus, markFreeTrialUsed, clearFreeTrialFlag, canUseFreeTrial } from '@/lib/free-trial'
 
 // Language translations
 const translations = {
@@ -38,9 +39,7 @@ const translations = {
     heroDescription: 'Carregue PDFs e obtenha resumos e questões de estudo com IA em segundos. Nenhum trabalho manual necessário.',
     
     // Mode toggle
-    demoMode: '🎭 MODO DEMO',
     openaiMode: '🚀 MODO OPENAI',
-    demoModeDesc: 'Grátis • Usa dados simulados',
     openaiModeDesc: 'Usa créditos • IA real',
     
     // Actions
@@ -73,8 +72,6 @@ const translations = {
     studyGroups: 'Grupos de Estudo',
     
     // Edit section
-    demoModeActive: 'Modo Demo Ativo',
-    demoModeContent: 'Este conteúdo foi gerado usando dados simulados',
     summary: 'Resumo',
     studyQuestions: 'Questões de Estudo',
     summaryPlaceholder: 'Resumo gerado por IA aparecerá aqui...',
@@ -132,6 +129,12 @@ const translations = {
     nextSteps_smart_feat4: 'Lembretes de estudo',
     nextSteps_footer1: '🚀 Estamos trabalhando para trazer esses recursos',
     nextSteps_footer2: '✨ Fique ligado para novidades incríveis!',
+    
+    // Free trial messages
+    freeTrialUsed: 'Você já usou sua avaliação gratuita',
+    freeTrialSignupPrompt: 'Crie uma conta para continuar usando nossos recursos de IA!',
+    freeTrialSignupButton: 'Criar Conta',
+    freeTrialBenefits: 'Obtenha 3 usos gratuitos e desbloqueie todos os recursos',
   },
   en: {
     // Navigation
@@ -157,9 +160,7 @@ const translations = {
     heroDescription: 'Upload PDFs and get AI-powered summaries and study questions in seconds. No manual work required.',
     
     // Mode toggle
-    demoMode: '🎭 DEMO MODE',
     openaiMode: '🚀 OPENAI MODE',
-    demoModeDesc: 'Free • Uses mock data',
     openaiModeDesc: 'Uses credits • Real AI',
     
     // Actions
@@ -192,8 +193,6 @@ const translations = {
     studyGroups: 'Study Groups',
     
     // Edit section
-    demoModeActive: 'Demo Mode Active',
-    demoModeContent: 'This content was generated using mock data',
     summary: 'Summary',
     studyQuestions: 'Study Questions',
     summaryPlaceholder: 'AI-generated summary will appear here...',
@@ -251,6 +250,12 @@ const translations = {
     nextSteps_smart_feat4: "Study reminders",
     nextSteps_footer1: "🚀 We're working hard to bring you these features",
     nextSteps_footer2: "✨ Stay tuned for exciting updates!",
+    
+    // Free trial messages
+    freeTrialUsed: "You've used your free trial",
+    freeTrialSignupPrompt: "Create an account to continue using our AI features!",
+    freeTrialSignupButton: "Create Account",
+    freeTrialBenefits: "Get 3 free uses and unlock all features",
   }
 }
 
@@ -262,7 +267,7 @@ export default function Home() {
   const [questions, setQuestions] = useState<string[]>([])
   const [currentStep, setCurrentStep] = useState<'upload' | 'extract' | 'generate' | 'edit'>('upload')
   const [isExporting, setIsExporting] = useState(false)
-  const [demoMode, setDemoMode] = useState(false)
+
   const [showHistory, setShowHistory] = useState(false)
   const [savedDocuments, setSavedDocuments] = useState<SavedDocument[]>([])
   const [showSaveSuccess, setShowSaveSuccess] = useState(false)
@@ -284,6 +289,10 @@ export default function Home() {
   const [usageLoading, setUsageLoading] = useState(false)
   const [showStatusMessage, setShowStatusMessage] = useState(true)
   
+  // Free trial state
+  const [freeTrialUsed, setFreeTrialUsed] = useState(false)
+  const [showFreeTrialModal, setShowFreeTrialModal] = useState(false)
+  
   // Language state
   const [language, setLanguage] = useState<'pt' | 'en'>('pt') // Default to Portuguese
   const t = translations[language]
@@ -293,11 +302,11 @@ export default function Home() {
 
   // Simplified maintenance mode check - only run on client
   useEffect(() => {
-    // Check URL parameters for demo mode
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get('demo') === 'true') {
-      setDemoMode(true)
-    }
+
+
+    // Check free trial status
+    const freeTrialStatus = checkFreeTrialStatus()
+    setFreeTrialUsed(freeTrialStatus.hasUsedFreeTrial)
 
     // Only check maintenance mode, don't block rendering
     const checkMaintenanceMode = async () => {
@@ -339,9 +348,19 @@ export default function Home() {
   }
 
   const handleFileUpload = useCallback((file: File) => {
+    // Check free trial status before allowing upload
+    const freeTrialStatus = checkFreeTrialStatus()
+    console.log('🔍 File upload - Free trial status:', freeTrialStatus)
+    
+    if (!isSignedIn && freeTrialStatus.hasUsedFreeTrial) {
+      console.log('❌ Free trial already used - should show signup prompt')
+      setShowFreeTrialModal(true)
+      return
+    }
+    
     setUploadedFile(file)
     setCurrentStep('extract')
-  }, [])
+  }, [isSignedIn])
 
   const handleTextExtracted = useCallback((text: string) => {
     console.log(`📝 handleTextExtracted called with ${text.length} characters`)
@@ -389,7 +408,14 @@ export default function Home() {
     setSummary(generatedSummary)
     setQuestions(generatedQuestions)
     setCurrentStep('edit')
-  }, [])
+    
+    // Mark free trial as used if user is not signed in
+    if (!isSignedIn && !freeTrialUsed) {
+      markFreeTrialUsed()
+      setFreeTrialUsed(true)
+      console.log('✅ Free trial marked as used after AI generation')
+    }
+  }, [isSignedIn, freeTrialUsed])
 
   const resetApp = useCallback(() => {
     setUploadedFile(null)
@@ -418,6 +444,15 @@ export default function Home() {
       setUsageLoading(false)
     }
   }, [isSignedIn])
+
+  // Clear free trial flag when user signs up
+  useEffect(() => {
+    if (isSignedIn && freeTrialUsed) {
+      clearFreeTrialFlag()
+      setFreeTrialUsed(false)
+      console.log('✅ User signed up - free trial flag cleared')
+    }
+  }, [isSignedIn, freeTrialUsed])
 
   // Load documents on mount and when user changes
   useEffect(() => {
@@ -451,7 +486,7 @@ export default function Home() {
               file_name: doc.fileName,
               summary: doc.summary,
               questions: doc.questions,
-              demo_mode: doc.demoMode,
+        
               created_at: doc.savedAt,
               updated_at: doc.savedAt,
               user_id: undefined
@@ -566,8 +601,7 @@ export default function Home() {
       hasFile: !!uploadedFile,
       hasSummary: !!summary && summary.trim().length > 0,
       hasQuestions: questions.length > 0,
-      userId: user?.id,
-      demoMode
+      userId: user?.id
     })
 
     if (!uploadedFile || !summary || questions.length === 0) {
@@ -580,7 +614,7 @@ export default function Home() {
         file_name: uploadedFile.name,
         summary,
         questions,
-        demo_mode: demoMode,
+        demo_mode: false,
         user_id: user?.id // Use Clerk user ID
       }
 
@@ -601,13 +635,13 @@ export default function Home() {
     } catch (error) {
       console.error('❌ Error saving document:', error)
     }
-  }, [uploadedFile, summary, questions, demoMode, user?.id])
+  }, [uploadedFile, summary, questions, user?.id])
 
   // Load a saved document
   const loadSavedDocument = useCallback((doc: SavedDocument) => {
     setSummary(doc.summary)
     setQuestions(doc.questions)
-    setDemoMode(doc.demo_mode)
+    
     setCurrentStep('edit')
     setShowHistory(false)
   }, [])
@@ -630,7 +664,7 @@ export default function Home() {
   const toggleDebug = useCallback(() => setShowDebug(!showDebug), [showDebug])
   const showHistoryModal = useCallback(() => setShowHistory(true), [])
   const hideHistoryModal = useCallback(() => setShowHistory(false), [])
-  const toggleDemoMode = useCallback(() => setDemoMode(!demoMode), [demoMode])
+
   const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setSummary(e.target.value)
   }, [])
@@ -1114,35 +1148,7 @@ export default function Home() {
           {t.heroDescription}
         </p>
 
-        {/* Mode Toggle */}
-        <div className="flex justify-center mb-8 md:mb-12">
-          <div className="bg-gray-900 rounded-lg px-4 py-5 border border-gray-700 w-full max-w-xs mx-auto flex items-center justify-center">
-            <div className="flex flex-col items-center w-full">
-              <button
-                onClick={toggleDemoMode}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors mb-2 ${
-                  demoMode ? 'bg-blue-500' : 'bg-green-500'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    demoMode ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <span className={`text-base font-semibold ${
-                demoMode ? 'text-blue-300' : 'text-green-300'
-              }`}>
-                {demoMode ? t.demoMode : t.openaiMode}
-              </span>
-              <span className={`text-xs mt-1 ${
-                demoMode ? 'text-blue-400' : 'text-green-400'
-              }`}>
-                {demoMode ? t.demoModeDesc : t.openaiModeDesc}
-              </span>
-            </div>
-          </div>
-        </div>
+
 
         {/* Main Upload Area or CTA */}
         <div className="mb-8 md:mb-16">
@@ -1289,8 +1295,8 @@ export default function Home() {
               <TextExtraction 
                 file={uploadedFile} 
                 onTextExtracted={handleTextExtracted}
-                demoMode={demoMode}
                 language={language}
+                freeTrialUsed={freeTrialUsed}
               />
             </div>
           )}
@@ -1300,25 +1306,15 @@ export default function Home() {
               <AIGeneration 
                 text={extractedText} 
                 onAIGenerated={handleAIGenerated}
-                demoMode={demoMode}
                 language={language}
+                freeTrialUsed={freeTrialUsed}
               />
             </div>
           )}
 
           {currentStep === 'edit' && (
             <div className="space-y-6">
-              {demoMode && (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🎭</span>
-                    <div>
-                      <p className="text-yellow-200 font-medium text-sm">{t.demoModeActive}</p>
-                      <p className="text-yellow-300/80 text-xs">{t.demoModeContent}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+
               
               <div className="bg-white rounded-lg p-6">
                 <h3 className="text-xl font-bold mb-4 text-gray-800">{t.summary}</h3>
@@ -1443,12 +1439,7 @@ export default function Home() {
                             <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                             <span>•</span>
                             <span>{doc.questions.length} {t.studyQuestions}</span>
-                            {doc.demo_mode && (
-                              <>
-                                <span>•</span>
-                                <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">{t.demoMode}</span>
-                              </>
-                            )}
+
                           </div>
                         </div>
                         <div className="flex gap-2 ml-4">
@@ -1472,6 +1463,52 @@ export default function Home() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Free Trial Modal */}
+      {showFreeTrialModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg shadow-xl max-w-md w-full border border-gray-700 relative">
+            {/* Close button */}
+            <button
+              onClick={() => setShowFreeTrialModal(false)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-orange-500/20 border border-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User size={32} className="text-orange-400" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-white mb-3">
+                {t.freeTrialUsed}
+              </h2>
+              
+              <p className="text-gray-400 mb-6">
+                {t.freeTrialSignupPrompt}
+              </p>
+              
+              <div className="space-y-3">
+                <SignUpButton mode="modal">
+                  <button
+                    onClick={() => setShowFreeTrialModal(false)}
+                    className="w-full px-6 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors"
+                  >
+                    {t.freeTrialSignupButton}
+                  </button>
+                </SignUpButton>
+                
+
+              </div>
+              
+              <p className="text-gray-500 text-sm mt-4">
+                {t.freeTrialBenefits}
+              </p>
             </div>
           </div>
         </div>

@@ -81,7 +81,7 @@ export async function saveDocument(document: Omit<SavedDocument, 'id' | 'created
         file_name: document.file_name,
         summary: document.summary,
         questions: document.questions,
-        demo_mode: document.demo_mode,
+    
         user_id: document.user_id || null
       })
       .select()

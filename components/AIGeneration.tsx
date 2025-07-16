@@ -6,11 +6,11 @@ import { Loader2, Sparkles, CheckCircle, AlertCircle, XCircle, Globe } from 'luc
 interface AIGenerationProps {
   text: string
   onAIGenerated: (summary: string, questions: string[]) => void
-  demoMode?: boolean
   language?: 'pt' | 'en'
+  freeTrialUsed?: boolean
 }
 
-export default function AIGeneration({ text, onAIGenerated, demoMode = false, language = 'pt' }: AIGenerationProps) {
+export default function AIGeneration({ text, onAIGenerated, language = 'pt', freeTrialUsed = false }: AIGenerationProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [summary, setSummary] = useState('')
   const [questions, setQuestions] = useState<string[]>([])
@@ -33,7 +33,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
   const componentId = useRef(Math.random().toString(36).substring(7))
   
   // Debug logging
-  console.log(`🔍 [${componentId.current}] AIGeneration render - Demo: ${demoMode}, Text length: ${text.length}, Processing: ${isProcessingRef.current}, HasProcessed: ${hasProcessedRef.current}`)
+      console.log(`🔍 [${componentId.current}] AIGeneration render - Text length: ${text.length}, Processing: ${isProcessingRef.current}, HasProcessed: ${hasProcessedRef.current}`)
   
   // Track when text changes to help debug re-renders
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
       return
     }
     
-    console.log(`🔍 [${componentId.current}] Starting AI generation - Demo: ${demoMode}, Text: ${text.substring(0, 50)}...`)
+    console.log(`🔍 [${componentId.current}] Starting AI generation - Text: ${text.substring(0, 50)}...`)
     
     hasProcessedRef.current = true // Mark as processed BEFORE starting
     isProcessingRef.current = true
@@ -122,112 +122,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
       try {
         setProgress(10)
         
-        if (demoMode) {
-          // Demo mode - simulate language detection and API delay
-          await new Promise(resolve => setTimeout(resolve, 600))
-          setProgress(20)
-          
-          // Simulate language detection
-          const sampleText = text.toLowerCase()
-          let mockDetectedLanguage = 'English'
-          let mockResponseLanguage = 'English'
-          
-          // Simple language detection for demo
-          if (sampleText.includes('português') || sampleText.includes('brasil') || sampleText.includes('você') || 
-              sampleText.includes('não') || sampleText.includes('são') || sampleText.includes('uma') ||
-              sampleText.includes('para') || sampleText.includes('com') || sampleText.includes('mais')) {
-            mockDetectedLanguage = 'Portuguese'
-            mockResponseLanguage = 'Portuguese'
-          }
-          
-          setDetectedLanguage(mockDetectedLanguage)
-          setResponseLanguage(mockResponseLanguage)
-          setLanguageDetected(true)
-          setProgress(40)
-          
-          await new Promise(resolve => setTimeout(resolve, 800))
-          setProgress(60)
-          
-          await new Promise(resolve => setTimeout(resolve, 600))
-          setProgress(80)
-          
-          // Generate dynamic mock content based on text length and language
-          const textLength = text.length
-          let mockSummary = ''
-          let mockQuestions: string[] = []
-          
-          if (mockResponseLanguage === 'Portuguese') {
-            // Portuguese mock content
-            if (textLength > 5000) {
-              mockSummary = `Este documento abrangente cobre múltiplas áreas-chave e fornece análise detalhada do assunto. O conteúdo explora várias metodologias, apresenta evidências de apoio e discute aplicações práticas. Os principais achados indicam relações significativas entre diferentes conceitos, com ênfase particular em estratégias de implementação e seus resultados. O documento também aborda desafios potenciais e propõe soluções para execução eficaz.`
-              mockQuestions = [
-                'Quais são as três principais metodologias discutidas no documento e como diferem em suas abordagens?',
-                'De acordo com a análise, que evidências apoiam a hipótese principal apresentada?',
-                'Como as estratégias de implementação abordam os desafios identificados?',
-                'Quais são os principais indicadores de desempenho mencionados para medir o sucesso?',
-                'Que aplicações práticas são sugeridas para implementação no mundo real?',
-                'Como as soluções propostas se comparam com as abordagens existentes na área?',
-                'Quais são os riscos potenciais e estratégias de mitigação descritas no documento?',
-                'Que exemplos específicos são fornecidos para ilustrar os conceitos principais?',
-                'Como as diferentes seções do documento se relacionam entre si?',
-                'Quais são as principais recomendações para profissionais da área?'
-              ]
-            } else {
-              mockSummary = `Este documento apresenta informações essenciais sobre o tópico com explicações claras e exemplos relevantes. O conteúdo abrange conceitos fundamentais e fornece insights práticos que ajudam a entender o assunto de forma eficaz.`
-              mockQuestions = [
-                'Quais são os conceitos fundamentais explicados neste documento?',
-                'Como os exemplos fornecidos ilustram os pontos principais?',
-                'Que insights práticos podem ser obtidos deste conteúdo?',
-                'Quais são as principais conclusões deste material?',
-                'Como essas informações se relacionam com aplicações mais amplas?',
-                'Quais são as principais conclusões apresentadas no documento?'
-              ]
-            }
-          } else {
-            // English mock content (existing logic)
-            if (textLength > 5000) {
-              mockSummary = `This comprehensive document covers multiple key areas and provides detailed analysis of the subject matter. The content explores various methodologies, presents supporting evidence, and discusses practical applications. Key findings indicate significant relationships between different concepts, with particular emphasis on implementation strategies and their outcomes. The document also addresses potential challenges and proposes solutions for effective execution.`
-              mockQuestions = [
-                'What are the three main methodologies discussed in the document and how do they differ in their approaches?',
-                'According to the analysis, what evidence supports the primary hypothesis presented?',
-                'How do the implementation strategies address the identified challenges?',
-                'What are the key performance indicators mentioned for measuring success?',
-                'What practical applications are suggested for real-world implementation?',
-                'How do the proposed solutions compare with existing approaches in the field?',
-                'What are the potential risks and mitigation strategies outlined in the document?',
-                'What specific examples are provided to illustrate the main concepts?',
-                'How do the different sections of the document relate to each other?',
-                'What are the key recommendations for practitioners in the field?'
-              ]
-            } else {
-              mockSummary = `This document presents essential information about the topic with clear explanations and relevant examples. The content covers fundamental concepts and provides practical insights that help understand the subject matter effectively.`
-              mockQuestions = [
-                'What are the fundamental concepts explained in this document?',
-                'How do the examples provided illustrate the main points?',
-                'What practical insights can be gained from this content?',
-                'What are the key takeaways from this material?',
-                'How does this information relate to broader applications?',
-                'What are the main conclusions presented in the document?'
-              ]
-            }
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 400))
-          setProgress(100)
-          
-          setSummary(mockSummary)
-          setQuestions(mockQuestions)
-          
-          // Small delay to show completion
-          setTimeout(() => {
-            console.log('🎭 Demo mode calling onAIGenerated callback')
-            onAIGeneratedRef.current(mockSummary, mockQuestions)
-            
-            // No usage refresh in demo mode - sandbox doesn't consume credits
-            console.log('🎭 Demo mode completed - no usage consumed')
-          }, 500)
-          
-        } else {
+
           // Real API mode
           const response = await fetch('/api/generate-ai-content', {
             method: 'POST',
@@ -240,7 +135,14 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
           setProgress(50)
 
           if (!response.ok) {
-            throw new Error('Failed to generate AI content')
+            const errorData = await response.json().catch(() => ({}))
+            
+            // Check if this is a free trial error
+            if (response.status === 403 && errorData.freeTrialUsed) {
+              throw new Error('FREE_TRIAL_USED')
+            }
+            
+            throw new Error(errorData.error || 'Failed to generate AI content')
           }
 
           const data = await response.json()
@@ -296,8 +198,6 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
             window.dispatchEvent(refreshEvent)
             console.log(`🔄 Usage refresh event dispatched after AI generation - ${data.usage_remaining} credits remaining`)
           }, 500)
-        }
-        
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -312,7 +212,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
     return () => {
       isProcessingRef.current = false
     }
-  }, [text, demoMode]) // Removed onAIGenerated from dependencies to prevent re-renders
+  }, [text]) // Removed onAIGenerated from dependencies to prevent re-renders
 
   if (isLoading) {
     return (
@@ -327,10 +227,10 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {demoMode ? `${t.freeSandbox}: Simulating AI analysis` : t.aiAnalyzing}
+              {t.aiAnalyzing}
             </h3>
             <p className="text-gray-400 text-lg">
-              {demoMode ? t.generatingContent : t.creatingContent}
+              {t.creatingContent}
             </p>
           </div>
           
@@ -377,30 +277,59 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
   }
 
   if (error) {
+    const freeTrialUsed = error === 'FREE_TRIAL_USED'
+    
     return (
       <div className="text-center py-12">
         <div className="flex flex-col items-center space-y-8">
-          <div className="w-16 h-16 bg-red-500/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-red-500/30">
-            <XCircle size={32} className="text-red-400" />
+          <div className={`w-16 h-16 ${freeTrialUsed ? 'bg-orange-500/20 border-orange-500/30' : 'bg-red-500/20 border-red-500/30'} backdrop-blur-sm rounded-full flex items-center justify-center border`}>
+            {freeTrialUsed ? (
+              <AlertCircle size={32} className="text-orange-400" />
+            ) : (
+              <XCircle size={32} className="text-red-400" />
+            )}
           </div>
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {t.aiProcessingFailed}
+              {freeTrialUsed ? 'Free Trial Used' : t.aiProcessingFailed}
             </h3>
             <p className="text-gray-400 text-lg max-w-md">
-              {error}
-            </p>
-          </div>
-          
-          <div className="bg-red-500/10 backdrop-blur-sm rounded-xl p-4 border border-red-500/30">
-            <p className="text-red-300 text-sm text-center">
-              {demoMode 
-                ? 'Free sandbox encountered an error. Please try again.' 
-                : 'Please check your OpenAI API key and try again.'
+              {freeTrialUsed 
+                ? 'You\'ve used your free trial. Create an account to continue using our AI features!'
+                : error
               }
             </p>
           </div>
+          
+          {freeTrialUsed ? (
+            <div className="bg-orange-500/10 backdrop-blur-sm rounded-xl p-6 border border-orange-500/30 max-w-md">
+              <div className="text-center space-y-4">
+                <p className="text-orange-300 text-sm">
+                  You've used your free trial. Create an account to continue using our AI features!
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => {
+                      // Trigger sign up - we'll need to handle this in the parent
+                      const event = new CustomEvent('openSignUp')
+                      window.dispatchEvent(event)
+                    }}
+                    className="px-6 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors"
+                  >
+                    Create Account
+                  </button>
+
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-red-500/10 backdrop-blur-sm rounded-xl p-4 border border-red-500/30">
+              <p className="text-red-300 text-sm text-center">
+                Please check your OpenAI API key and try again.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -419,7 +348,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
                 {t.aiAnalysisComplete}
               </h3>
               <p className="text-gray-400">
-                {demoMode ? t.sampleGenerated : t.summaryGenerated}
+                {t.summaryGenerated}
               </p>
             </div>
           </div>
@@ -437,11 +366,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
               </div>
             )}
             
-            {demoMode && (
-              <div className="bg-yellow-500/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-yellow-500/30">
-                <span className="text-yellow-300 text-sm font-medium">{t.freeSandbox}</span>
-              </div>
-            )}
+
           </div>
         </div>
 
@@ -472,7 +397,7 @@ export default function AIGeneration({ text, onAIGenerated, demoMode = false, la
         </div>
         <div>
           <h3 className="text-2xl font-bold text-white">
-            {demoMode ? '🎭 Sample Content Generated' : 'AI Content Generated'}
+            AI Content Generated
           </h3>
           <p className="text-white/60 text-sm">Ready for editing and export</p>
         </div>

@@ -38,7 +38,7 @@ export interface SavedDocument {
   file_name: string
   summary: string
   questions: string[]
-  demo_mode: boolean
+
   created_at: string
   updated_at: string
 }

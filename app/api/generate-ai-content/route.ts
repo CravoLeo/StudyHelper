@@ -58,12 +58,11 @@ export async function POST(request: NextRequest) {
     
     console.log(`🔍 [REQ-${requestId}] Auth result - User ID: ${userId || 'NULL'}`)
     
+    // For now, allow anonymous users (free trial will be handled by frontend)
+    // TODO: Add proper free trial tracking on server side
     if (!userId) {
-      console.log(`❌ [REQ-${requestId}] No user ID - returning 401`)
-      return NextResponse.json({ 
-        error: 'Real AI features require an account. Try our demo mode for a preview!',
-        needsAuth: true 
-      }, { status: 401 })
+      console.log(`🎭 [REQ-${requestId}] Anonymous user - allowing free trial access`)
+      // Continue with anonymous access - frontend will handle free trial logic
     }
 
     const { text } = await request.json()
@@ -79,61 +78,72 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
     }
 
-    // FIRST: Check if user is already being processed
-    console.log(`🔒 [REQ-${requestId}] Checking user lock for ${userId}...`)
-    console.log(`🔒 [REQ-${requestId}] Currently locked users: ${Array.from(userLocks.keys()).join(', ') || 'NONE'}`)
+    // Handle user locking and caching (only for authenticated users)
+    let cacheKey: string | null = null
     
-    if (!lockUser(userId)) {
-      console.log(`🔒 [REQ-${requestId}] USER LOCKED: User ${userId} already has an AI generation in progress`)
-      return NextResponse.json({ 
-        error: 'Another AI generation is already in progress for your account. Please wait for it to complete.',
-        retry: true
-      }, { status: 429 })
-    }
-    
-    console.log(`✅ [REQ-${requestId}] User ${userId} locked successfully`)
+    if (userId) {
+      // FIRST: Check if user is already being processed
+      console.log(`🔒 [REQ-${requestId}] Checking user lock for ${userId}...`)
+      console.log(`🔒 [REQ-${requestId}] Currently locked users: ${Array.from(userLocks.keys()).join(', ') || 'NONE'}`)
+      
+      if (!lockUser(userId)) {
+        console.log(`🔒 [REQ-${requestId}] USER LOCKED: User ${userId} already has an AI generation in progress`)
+        return NextResponse.json({ 
+          error: 'Another AI generation is already in progress for your account. Please wait for it to complete.',
+          retry: true
+        }, { status: 429 })
+      }
+      
+      console.log(`✅ [REQ-${requestId}] User ${userId} locked successfully`)
 
-    // Create a unique request ID for deduplication - use more text for better uniqueness
-    const textHash = Buffer.from(text.substring(0, 500)).toString('base64')
-    const cacheKey = `${userId}-${textHash}`
-    
-    console.log(`🔍 [REQ-${requestId}] Cache key: ${cacheKey.substring(0, 50)}...`)
-    
-    // Clean up old cache entries
-    cleanCache()
-    
-    // Check if we have a cached response for this request
-    const cachedResponse = requestCache.get(cacheKey)
-    if (cachedResponse) {
-      console.log(`🔄 [REQ-${requestId}] CACHE HIT: Returning cached response for user ${userId} - NO USAGE CHARGED`)
-      console.log(`🔄 [REQ-${requestId}] Cache entry timestamp: ${new Date(cachedResponse.timestamp).toISOString()}`)
-      return NextResponse.json(cachedResponse.response)
-    }
+      // Create a unique request ID for deduplication - use more text for better uniqueness
+      const textHash = Buffer.from(text.substring(0, 500)).toString('base64')
+      cacheKey = `${userId}-${textHash}`
+      
+      console.log(`🔍 [REQ-${requestId}] Cache key: ${cacheKey.substring(0, 50)}...`)
+      
+      // Clean up old cache entries
+      cleanCache()
+      
+      // Check if we have a cached response for this request
+      const cachedResponse = requestCache.get(cacheKey)
+      if (cachedResponse) {
+        console.log(`🔄 [REQ-${requestId}] CACHE HIT: Returning cached response for user ${userId} - NO USAGE CHARGED`)
+        console.log(`🔄 [REQ-${requestId}] Cache entry timestamp: ${new Date(cachedResponse.timestamp).toISOString()}`)
+        return NextResponse.json(cachedResponse.response)
+      }
 
-    console.log(`🔄 [REQ-${requestId}] CACHE MISS: Processing new AI request for user ${userId}`)
-    console.log(`🔄 [REQ-${requestId}] Current cache size: ${requestCache.size} entries`)
+      console.log(`🔄 [REQ-${requestId}] CACHE MISS: Processing new AI request for user ${userId}`)
+      console.log(`🔄 [REQ-${requestId}] Current cache size: ${requestCache.size} entries`)
+    } else {
+      console.log(`🎭 [REQ-${requestId}] Anonymous user - skipping user lock and cache`)
+    }
 
     // Initialize OpenAI client
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
 
-    // Check if user can make request and has enough credits
-    console.log(`💳 [REQ-${requestId}] Checking user credits...`)
-    const { canMake, usage } = await canUserMakeRequest(userId)
-    
-    console.log(`💳 [REQ-${requestId}] User ${userId} usage status:`, {
-      canMake,
-      uses_remaining: usage?.uses_remaining,
-      plan_type: usage?.plan_type
-    })
-    
-    if (!canMake) {
-      // TEMPORARY FIX: Log the issue but allow the request to proceed
-      console.warn(`⚠️ [REQ-${requestId}] User ${userId} has insufficient credits, but allowing request for debugging`)
-      console.warn(`⚠️ [REQ-${requestId}] Usage data:`, usage)
+    // Check if user can make request and has enough credits (only for authenticated users)
+    if (userId) {
+      console.log(`💳 [REQ-${requestId}] Checking user credits...`)
+      const { canMake, usage } = await canUserMakeRequest(userId)
+      
+      console.log(`💳 [REQ-${requestId}] User ${userId} usage status:`, {
+        canMake,
+        uses_remaining: usage?.uses_remaining,
+        plan_type: usage?.plan_type
+      })
+      
+      if (!canMake) {
+        // TEMPORARY FIX: Log the issue but allow the request to proceed
+        console.warn(`⚠️ [REQ-${requestId}] User ${userId} has insufficient credits, but allowing request for debugging`)
+        console.warn(`⚠️ [REQ-${requestId}] Usage data:`, usage)
+      } else {
+        console.log(`🔄 [REQ-${requestId}] User ${userId} generating AI content (${usage?.uses_remaining} credits remaining)`)
+      }
     } else {
-      console.log(`🔄 [REQ-${requestId}] User ${userId} generating AI content (${usage?.uses_remaining} credits remaining)`)
+      console.log(`🎭 [REQ-${requestId}] Anonymous user - skipping usage check`)
     }
 
     // Don't decrement usage yet - wait until the end of successful processing
@@ -381,20 +391,24 @@ export async function POST(request: NextRequest) {
     const finalQuestions = questions.filter(q => q.trim().length > 0)
     console.log(`🎯 Final result: ${summary.trim().length} char summary, ${finalQuestions.length} questions in ${responseLanguage}`)
     
-    // NOW decrement usage - only after successful completion of all processing
+    // NOW decrement usage - only after successful completion of all processing (only for authenticated users)
     let updatedUsage: UserUsage | null = null
-    try {
-      updatedUsage = await decrementUserUsage(userId)
-      if (updatedUsage) {
-        console.log(`✅ [REQ-${requestId}] USAGE DECREMENTED AT END: ${updatedUsage.uses_remaining} credits remaining for user ${userId}`)
-      } else {
-        console.error(`❌ [REQ-${requestId}] Failed to decrement usage for user ${userId}`)
+    if (userId) {
+      try {
+        updatedUsage = await decrementUserUsage(userId)
+        if (updatedUsage) {
+          console.log(`✅ [REQ-${requestId}] USAGE DECREMENTED AT END: ${updatedUsage.uses_remaining} credits remaining for user ${userId}`)
+        } else {
+          console.error(`❌ [REQ-${requestId}] Failed to decrement usage for user ${userId}`)
+        }
+      } catch (error) {
+        console.error('❌ Error decrementing usage:', error)
       }
-    } catch (error) {
-      console.error('❌ Error decrementing usage:', error)
+    } else {
+      console.log(`🎭 [REQ-${requestId}] Anonymous user - no usage decremented`)
     }
     
-    // Cache the response for future requests
+    // Cache the response for future requests (only for authenticated users)
     const responseData = {
       summary: summary.trim(),
       questions: finalQuestions,
@@ -403,12 +417,16 @@ export async function POST(request: NextRequest) {
       response_language: responseLanguage
     }
     
-    requestCache.set(cacheKey, {
-      response: responseData,
-      timestamp: Date.now()
-    })
-    
-    console.log(`✅ [REQ-${requestId}] RESPONSE CACHED: Cache key ${cacheKey.substring(0, 50)}... stored`)
+    if (cacheKey) {
+      requestCache.set(cacheKey, {
+        response: responseData,
+        timestamp: Date.now()
+      })
+      
+      console.log(`✅ [REQ-${requestId}] RESPONSE CACHED: Cache key ${cacheKey.substring(0, 50)}... stored`)
+    } else {
+      console.log(`🎭 [REQ-${requestId}] Anonymous user - response not cached`)
+    }
     console.log(`✅ [REQ-${requestId}] FINAL RESULT: ${finalQuestions.length} questions, ${summary.trim().length} char summary`)
     console.log(`✅ [REQ-${requestId}] PROCESS COMPLETE: Single usage consumed for entire AI generation process`)
 

@@ -6,8 +6,8 @@ import { Loader2, FileText, Eye, EyeOff, CheckCircle, XCircle, User } from 'luci
 interface TextExtractionProps {
   file: File
   onTextExtracted: (text: string) => void
-  demoMode?: boolean
   language?: 'pt' | 'en'
+  freeTrialUsed?: boolean
 }
 
 const translations = {
@@ -25,7 +25,7 @@ const translations = {
     usageLimitReached: 'Limite de uso atingido',
     extractionFailed: 'Falha na extração',
     signInRequiredDesc: 'Recursos reais de IA requerem uma conta. Experimente nosso modo demo para ver como funciona primeiro!',
-    tryDemoMode: 'Experimentar Modo Demo',
+
     upgradeDesc: '🚀 Atualize seu plano para continuar processando documentos com resumos e questões de estudo alimentados por IA.',
     viewPricingPlans: 'Ver Planos de Preços',
     backToHome: 'Voltar ao Início',
@@ -50,8 +50,7 @@ const translations = {
     signInRequired: 'Sign in required',
     usageLimitReached: 'Usage limit reached',
     extractionFailed: 'Extraction failed',
-    signInRequiredDesc: 'Real AI features require an account. Try our demo mode to see how it works first!',
-    tryDemoMode: 'Try Demo Mode',
+    signInRequiredDesc: 'Real AI features require an account. Create an account to continue using our AI features!',
     upgradeDesc: '🚀 Upgrade your plan to continue processing documents with AI-powered summaries and study questions.',
     viewPricingPlans: 'View Pricing Plans',
     backToHome: 'Back to Home',
@@ -65,7 +64,7 @@ const translations = {
   }
 }
 
-export default function TextExtraction({ file, onTextExtracted, demoMode = false, language = 'pt' }: TextExtractionProps) {
+export default function TextExtraction({ file, onTextExtracted, language = 'pt', freeTrialUsed = false }: TextExtractionProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [extractedText, setExtractedText] = useState('')
   const [error, setError] = useState('')
@@ -111,7 +110,7 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
 
         const formData = new FormData()
         formData.append('file', file)
-        formData.append('demoMode', demoMode.toString())
+    
 
         const response = await fetch('/api/extract-text', {
           method: 'POST',
@@ -124,9 +123,15 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
           const errorData = await response.json().catch(() => ({}))
           console.error(`❌ [${componentId.current}] API Error:`, errorData)
           
-          // Check if this is an authentication error
+          // Check if this is an authentication error or free trial error
           if (response.status === 401 && errorData.needsAuth) {
             setError('NEEDS_AUTH')
+            return
+          }
+          
+          // Check if this is a free trial error
+          if (response.status === 403 && errorData.freeTrialUsed) {
+            setError('FREE_TRIAL_USED')
             return
           }
           
@@ -142,14 +147,10 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
         setExtractedText(data.text || '')
         onTextExtracted(data.text || '')
         
-        if (!demoMode) {
-          // Refresh usage after successful extraction (only in real mode)
+        // Refresh usage after successful extraction
         const refreshEvent = new CustomEvent('refreshUsage')
         window.dispatchEvent(refreshEvent)
-          console.log(`🔄 [${componentId.current}] Usage refresh event dispatched after text extraction`)
-        } else {
-          console.log(`🎭 [${componentId.current}] Demo mode - no usage consumed for text extraction`)
-        }
+        console.log(`🔄 [${componentId.current}] Usage refresh event dispatched after text extraction`)
       } catch (err) {
         console.error(`❌ [${componentId.current}] Text extraction failed:`, err)
         setError(err instanceof Error ? err.message : 'Failed to extract text')
@@ -159,7 +160,7 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
     }
 
     extractText()
-  }, [file, onTextExtracted, demoMode]) // Removed 't' dependency to prevent duplicate API calls
+  }, [file, onTextExtracted]) // Removed 't' dependency to prevent duplicate API calls
 
   if (isLoading) {
     return (
@@ -216,16 +217,19 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
   }
 
   if (error) {
-    // Check if this is a usage limit error or authentication error
+    // Check if this is a usage limit error, authentication error, or free trial error
     const isUsageLimitError = error.includes('Usage limit exceeded')
     const needsAuth = error === 'NEEDS_AUTH'
+    const freeTrialUsed = error === 'FREE_TRIAL_USED'
     
     return (
       <div className="text-center py-12">
         <div className="flex flex-col items-center space-y-8">
-          <div className={`w-16 h-16 ${needsAuth ? 'bg-blue-500/20 border-blue-500/30' : 'bg-red-500/20 border-red-500/30'} backdrop-blur-sm rounded-full flex items-center justify-center border`}>
+          <div className={`w-16 h-16 ${needsAuth ? 'bg-blue-500/20 border-blue-500/30' : freeTrialUsed ? 'bg-orange-500/20 border-orange-500/30' : 'bg-red-500/20 border-red-500/30'} backdrop-blur-sm rounded-full flex items-center justify-center border`}>
             {needsAuth ? (
               <User size={32} className="text-blue-400" />
+            ) : freeTrialUsed ? (
+              <User size={32} className="text-orange-400" />
             ) : (
               <XCircle size={32} className="text-red-400" />
             )}
@@ -233,11 +237,13 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {needsAuth ? t.signInRequired : isUsageLimitError ? t.usageLimitReached : t.extractionFailed}
+              {needsAuth ? t.signInRequired : freeTrialUsed ? 'Free Trial Used' : isUsageLimitError ? t.usageLimitReached : t.extractionFailed}
             </h3>
             <p className="text-gray-400 text-lg max-w-md">
               {needsAuth 
                 ? t.signInRequiredDesc
+                : freeTrialUsed
+                ? 'You\'ve used your free trial. Create an account to continue using our AI features!'
                 : error
               }
             </p>
@@ -251,13 +257,34 @@ export default function TextExtraction({ file, onTextExtracted, demoMode = false
                 </p>
                 <button
                   onClick={() => {
-                    // Redirect to home with demo mode enabled
-                    window.location.href = '/?demo=true'
+                    // Redirect to home
+                    window.location.href = '/'
                   }}
                   className="px-8 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors text-lg"
                 >
-                  {t.tryDemoMode}
+                  Back to Home
                 </button>
+              </div>
+            </div>
+          ) : freeTrialUsed ? (
+            <div className="bg-orange-500/10 backdrop-blur-sm rounded-xl p-6 border border-orange-500/30 max-w-md">
+              <div className="text-center space-y-4">
+                <p className="text-orange-300 text-sm">
+                  You've used your free trial. Create an account to continue using our AI features!
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => {
+                      // Trigger sign up - we'll need to handle this in the parent
+                      const event = new CustomEvent('openSignUp')
+                      window.dispatchEvent(event)
+                    }}
+                    className="px-6 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors"
+                  >
+                    Create Account
+                  </button>
+
+                </div>
               </div>
             </div>
           ) : isUsageLimitError ? (

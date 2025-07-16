@@ -20,24 +20,22 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== File Upload Request Received ===')
     
-    // Get form data first to check demo mode
+    // Get form data
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const demoMode = formData.get('demoMode') === 'true'
     
-    // Check authentication - allow demo mode without login
+    // Check authentication - allow free trial without login
     const { userId } = await auth()
     
-    if (!demoMode && !userId) {
-      console.log('❌ No user authentication (real mode requires login)')
-      return NextResponse.json({ 
-        error: 'Real AI features require an account. Try our demo mode to see how it works!',
-        needsAuth: true 
-      }, { status: 401 })
+    // For now, allow anonymous users (free trial will be handled by frontend)
+    // TODO: Add proper free trial tracking on server side
+    if (!userId) {
+      console.log('🎭 Anonymous user - allowing free trial access for text extraction')
+      // Continue with anonymous access - frontend will handle free trial logic
     }
     
-    // Check if user can make request (usage limits) - skip in demo mode
-    if (!demoMode && userId) {
+    // Check if user can make request (usage limits) - skip for anonymous users
+    if (userId) {
       const { canMake, usage } = await canUserMakeRequest(userId)
       
       if (!canMake) {
@@ -50,7 +48,7 @@ export async function POST(request: NextRequest) {
       
       console.log('✅ User authentication and usage check passed')
     } else {
-      console.log('🎭 Demo mode - skipping authentication and usage check')
+      console.log('🎭 Anonymous user - skipping usage check (free trial)')
     }
 
     if (!file) {
@@ -62,8 +60,7 @@ export async function POST(request: NextRequest) {
       name: file.name,
       type: file.type,
       size: file.size,
-      lastModified: file.lastModified,
-      demoMode: demoMode
+      lastModified: file.lastModified
     })
 
     // Check file size limit (15MB for PDFs)
@@ -114,10 +111,10 @@ export async function POST(request: NextRequest) {
 
     // Note: Usage is NOT decremented here - text extraction is just preprocessing
     // Usage will be decremented in the AI generation API after successful completion
-    if (!demoMode && userId) {
+    if (userId) {
       console.log('✅ Text extraction successful - usage will be charged during AI generation')
     } else {
-      console.log('🎭 Demo mode - no usage consumed')
+      console.log('🎭 Anonymous user - no usage consumed (free trial)')
     }
 
     console.log('✅ Text extraction successful! Returning', extractedText.trim().length, 'characters')
