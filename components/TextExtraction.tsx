@@ -35,10 +35,7 @@ const translations = {
     showFullText: 'Mostrar texto completo',
     showLess: 'Mostrar menos',
     extractedText: 'Texto Extraído',
-    continueToAi: 'Continuar para IA →',
-    fileTooLarge: 'Arquivo Muito Grande',
-    fileTooLargeDesc: 'Seu arquivo é muito grande para processamento. Tente um arquivo menor (menos de 15MB) ou comprima seu PDF antes de carregar.',
-    trySmallerFile: 'Tentar Arquivo Menor'
+    continueToAi: 'Continuar para IA →'
   },
   en: {
     extractingText: 'Extracting text from your document',
@@ -63,10 +60,7 @@ const translations = {
     showFullText: 'Show full text',
     showLess: 'Show less',
     extractedText: 'Extracted Text',
-    continueToAi: 'Continue to AI →',
-    fileTooLarge: 'File Too Large',
-    fileTooLargeDesc: 'Your file is too large for processing. Please try a smaller file (under 15MB) or compress your PDF before uploading.',
-    trySmallerFile: 'Try Smaller File'
+    continueToAi: 'Continue to AI →'
   }
 }
 
@@ -227,7 +221,6 @@ export default function TextExtraction({ file, onTextExtracted, language = 'pt',
     const isUsageLimitError = error.includes('Usage limit exceeded')
     const needsAuth = error === 'NEEDS_AUTH'
     const freeTrialUsed = error === 'FREE_TRIAL_USED'
-    const isFileTooLarge = error.includes('413') || error.includes('too large') || error.includes('Payload Too Large')
     
     return (
       <div className="text-center py-12">
@@ -244,15 +237,13 @@ export default function TextExtraction({ file, onTextExtracted, language = 'pt',
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {needsAuth ? t.signInRequired : freeTrialUsed ? 'Free Trial Used' : isUsageLimitError ? t.usageLimitReached : isFileTooLarge ? t.fileTooLarge : t.extractionFailed}
+              {needsAuth ? t.signInRequired : freeTrialUsed ? 'Free Trial Used' : isUsageLimitError ? t.usageLimitReached : t.extractionFailed}
             </h3>
             <p className="text-gray-400 text-lg max-w-md">
               {needsAuth 
                 ? t.signInRequiredDesc
                 : freeTrialUsed
                 ? 'You\'ve used your free trial. Create an account to continue using our AI features!'
-                : isFileTooLarge
-                ? t.fileTooLargeDesc
                 : error
               }
             </p>
@@ -312,28 +303,6 @@ export default function TextExtraction({ file, onTextExtracted, language = 'pt',
                     className="px-6 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors"
                   >
                     {t.viewPricingPlans}
-                  </button>
-                  <button
-                    onClick={() => window.location.href = '/'}
-                    className="px-6 py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
-                  >
-                    {t.backToHome}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : isFileTooLarge ? (
-            <div className="bg-orange-500/10 backdrop-blur-sm rounded-xl p-6 border border-orange-500/30 max-w-md">
-              <div className="text-center space-y-4">
-                <p className="text-orange-300 text-sm">
-                  {t.fileTooLargeDesc}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button
-                    onClick={() => window.location.href = '/'}
-                    className="px-6 py-3 bg-green-500 text-black rounded-lg font-medium hover:bg-green-400 transition-colors"
-                  >
-                    {t.trySmallerFile}
                   </button>
                   <button
                     onClick={() => window.location.href = '/'}

@@ -17,10 +17,5 @@
     "env": {
       "SKIP_ENV_VALIDATION": "true"
     }
-  },
-  "limits": {
-    "bodyParser": {
-      "sizeLimit": "16mb"
-    }
   }
 } 

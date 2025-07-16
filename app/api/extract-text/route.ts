@@ -121,14 +121,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ text: extractedText.trim() })
   } catch (error) {
     console.error('❌ Text extraction error:', error)
-    
-    // Check if it's a payload too large error
-    if (error instanceof Error && error.message.includes('413')) {
-      return NextResponse.json({ 
-        error: 'File too large for processing. Please try a smaller file (under 15MB) or compress your PDF before uploading.' 
-      }, { status: 413 })
-    }
-    
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 
