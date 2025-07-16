@@ -1534,8 +1534,8 @@ export default function Home() {
       <NextStepsModal 
         isOpen={showNextStepsModal}
         onClose={() => setShowNextStepsModal(false)}
-        t={t}
-      />
-    </div>
+                  t={t}
+        />
+      </div>
   )
 } 
