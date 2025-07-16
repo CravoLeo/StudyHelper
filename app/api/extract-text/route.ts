@@ -62,11 +62,11 @@ export async function POST(request: NextRequest) {
       lastModified: file.lastModified
     })
 
-    // Check file size limit (15MB for PDFs)
-    if (file.size > 15 * 1024 * 1024) {
+    // Check file size limit (4.5MB for PDFs)
+    if (file.size > 4.5 * 1024 * 1024) {
       console.log('❌ File too large:', file.size, 'bytes')
       return NextResponse.json({ 
-        error: 'File too large. Maximum size is 15MB.' 
+        error: 'File too large. Maximum size is 4.5MB.' 
       }, { status: 400 })
     }
 

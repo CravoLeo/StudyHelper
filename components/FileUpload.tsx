@@ -13,20 +13,20 @@ const translations = {
   pt: {
     selectValidPdf: 'Por favor, selecione um arquivo PDF válido',
     uploadPdf: 'Por favor, carregue um arquivo PDF. OCR de imagens está atualmente indisponível - tente converter sua imagem para PDF primeiro.',
-    fileSizeLimit: 'O tamanho do arquivo deve ser inferior a 15MB',
+    fileSizeLimit: 'O tamanho do arquivo deve ser inferior a 4.5MB',
     dropFileHere: 'Solte seu arquivo aqui',
     uploadDocument: 'Carregue seu documento',
-    dragDropText: 'Arraste e solte ou clique para selecionar • Apenas PDF • Máx 15MB',
+    dragDropText: 'Arraste e solte ou clique para selecionar • Apenas PDF • Máx 4.5MB',
     pdfOnly: 'PDF',
     imagesConvert: 'Imagens: Em desenvolvimento'
   },
   en: {
     selectValidPdf: 'Please select a valid PDF file',
     uploadPdf: 'Please upload a PDF file. Image OCR is currently unavailable - try converting your image to PDF first.',
-    fileSizeLimit: 'File size must be less than 15MB',
+    fileSizeLimit: 'File size must be less than 4.5MB',
     dropFileHere: 'Drop your file here',
     uploadDocument: 'Upload your document',
-    dragDropText: 'Drag & drop or click to select • PDF only • Max 15MB',
+    dragDropText: 'Drag & drop or click to select • PDF only • Max 4.5MB',
     pdfOnly: 'PDF',
     imagesConvert: 'Images: Convert to PDF'
   }
@@ -53,8 +53,8 @@ export default function FileUpload({ onFileUpload, language = 'pt' }: FileUpload
       return
     }
 
-    // Validate file size (15MB limit)
-    const maxSize = 15 * 1024 * 1024
+    // Validate file size (4.5MB limit)
+    const maxSize = 4.5 * 1024 * 1024
     if (file.size > maxSize) {
       setError(t.fileSizeLimit)
       return
