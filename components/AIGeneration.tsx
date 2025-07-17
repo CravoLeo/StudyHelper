@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { Loader2, Sparkles, CheckCircle, AlertCircle, XCircle, Globe } from 'lucide-react'
+import { Loader2, BookOpen, CheckCircle, AlertCircle, XCircle, Globe } from 'lucide-react'
 
 interface AIGenerationProps {
   text: string
@@ -221,7 +221,7 @@ export default function AIGeneration({ text, onAIGenerated, language = 'pt', fre
           <div className="relative">
             <div className="w-16 h-16 border-4 border-gray-600 border-t-green-500 rounded-full animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles size={24} className="text-green-400 animate-pulse" />
+              <BookOpen size={24} className="text-green-400 animate-pulse" />
             </div>
           </div>
           

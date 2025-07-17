@@ -8,7 +8,7 @@ import AIGeneration from '@/components/AIGeneration'
 import PricingModal from '@/components/PricingModal'
 import NextStepsModal from '@/components/NextStepsModal'
 import MaintenanceMode from '@/components/MaintenanceMode'
-import { FileText, Upload, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket, Globe, Menu, X } from 'lucide-react'
+import { FileText, Upload, BookOpen, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket, Globe, Menu, X } from 'lucide-react'
 import { SavedDocument, isLocalMode } from '@/lib/supabase'
 import { saveDocument, getDocuments, deleteDocument, UserUsage } from '@/lib/database'
 import { checkFreeTrialStatus, markFreeTrialUsed, clearFreeTrialFlag, canUseFreeTrial } from '@/lib/free-trial'
@@ -811,7 +811,7 @@ export default function Home() {
         {/* Left: Logo */}
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-black" />
+            <BookOpen className="w-5 h-5 text-black" />
           </div>
           <span className="text-xl font-bold text-white">StudyHelper</span>
         </div>
@@ -960,7 +960,7 @@ export default function Home() {
             <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-gray-900/95 backdrop-blur-sm">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-black" />
+                  <BookOpen className="w-5 h-5 text-black" />
                 </div>
                 <span className="text-xl font-bold text-white">StudyHelper</span>
               </div>
@@ -984,7 +984,7 @@ export default function Home() {
                   className="flex items-center gap-4 w-full p-5 bg-gray-800/80 hover:bg-gray-700/80 text-white rounded-xl transition-all active:scale-95 backdrop-blur-sm"
                 >
                   <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-green-400" />
+                    <BookOpen className="w-5 h-5 text-green-400" />
                   </div>
                   <span className="text-xl font-semibold">{t.features}</span>
                 </button>
@@ -1194,7 +1194,7 @@ export default function Home() {
                   currentStep === 'edit' ? 'bg-green-500/20 text-green-300' : 
                   'bg-gray-800 text-gray-400'
                 }`}>
-                  <Sparkles size={16} />
+                  <BookOpen size={16} />
                   <span className="text-sm font-medium">{t.generate}</span>
                 </div>
                 <div className={`w-6 h-0.5 ${
