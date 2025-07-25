@@ -1,65 +1,63 @@
-# StudyHelper - AI-Powered Study Assistant
+# StudyHelper - AI-Powered Document Processing
 
-StudyHelper is a Next.js web application that helps students and professionals study more efficiently by extracting text from PDFs and images, then generating AI-powered summaries and study questions.
+Transform documents into study materials with advanced AI technology. StudyHelper automatically generates summaries and study questions from your PDFs and images.
 
-## Features
+you can access it on https://studyhelper.app/
 
-- **File Upload**: Drag-and-drop or select PDF files and images (JPG, PNG)
-- **Text Extraction**: 
-  - Direct text extraction from PDF files ✅ **Working perfectly**
-  - OCR (Optical Character Recognition) for images using Tesseract.js ⚠️ **Optimized for serverless**
-- **AI-Powered Generation**:
-  - Automated summary generation using OpenAI GPT ✅ **Working perfectly**
-  - Study questions creation tailored to the content ✅ **Working perfectly**
-- **Edit & Export**: 
-  - Edit generated summaries and questions
-  - Export results as text or PDF files
-- **Clean UI**: Modern, responsive design with Tailwind CSS
-- **User Authentication**: Secure login with Clerk
-- **Usage Tracking**: Credit-based system with Stripe integration
+![StudyHelper](https://img.shields.io/badge/StudyHelper-AI%20Powered-blue)
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3-38B2AC)
 
-## 📋 **Image Processing Notes**
+## ✨ Features
 
-**For best results with images:**
-- Use **high-contrast, clear text** (black text on white background)
-- **Avoid handwritten text** - OCR works best with printed text
-- **Keep images under 5MB** for faster processing
-- **Consider converting to PDF** for complex documents
+### 📄 **Document Processing**
+- **PDF Support**: Upload and process PDF documents
+- **Image OCR**: Extract text from images (JPG, PNG, GIF, WebP)
+- **Multiple Formats**: Support for various file types
+- **File Size Limit**: Up to 4.5MB per file
 
-**If image OCR fails:**
-- Try **converting your image to PDF** first (many online tools available)
-- Use **higher resolution images** (at least 300 DPI)
-- Ensure **good lighting** and **minimal skew** in photos
+### 🤖 **AI-Powered Analysis**
+- **Smart Summaries**: Generate comprehensive document summaries
+- **Study Questions**: Create relevant study questions automatically
+- **Multi-language Support**: Portuguese and English
+- **High Accuracy**: Powered by OpenAI's advanced language models
 
-## Tech Stack
+### 👤 **User Management**
+- **Secure Authentication**: Clerk-powered user authentication
+- **Free Trial**: 1 free use for anonymous users
+- **Registered Users**: 3 free uses per month
+- **Premium Plans**: Unlimited usage with subscription
 
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API routes
-- **Authentication**: Clerk
-- **Database**: Supabase
-- **Payments**: Stripe
-- **Text Extraction**: 
-  - PDF: `pdf-parse` library
-  - OCR: `tesseract.js` library (optimized for serverless)
-- **AI**: OpenAI GPT API
-- **UI Components**: Lucide React icons
-- **File Upload**: React Dropzone
+### 💾 **Document Management**
+- **Save Documents**: Store processed documents securely
+- **History**: Access your document history
+- **Export Options**: Download as TXT or PDF
+- **Cloud Storage**: Supabase-powered secure storage
 
-## Prerequisites
+### 💳 **Subscription System**
+- **Multiple Plans**: Free, Individual, Starter, Pro, Unlimited
+- **Stripe Integration**: Secure payment processing
+- **Usage Tracking**: Monitor your usage and credits
+- **Customer Portal**: Manage subscriptions easily
 
+## 🚀 Getting Started
+
+### Prerequisites
 - Node.js 18+ 
-- npm or yarn package manager
-- OpenAI API key (required for AI features)
-- Clerk account for authentication
-- Supabase account for database
-- Stripe account for payments (optional)
+- npm or yarn
+- Google Cloud Vision API key
+- OpenAI API key
+- Supabase account
+- Clerk account
+- Stripe account
 
-## Installation
+### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd resumeAPP
+   git clone https://github.com/yourusername/studyhelper.git
+   cd studyhelper
    ```
 
 2. **Install dependencies**
@@ -68,22 +66,23 @@ StudyHelper is a Next.js web application that helps students and professionals s
    ```
 
 3. **Set up environment variables**
-   Create a `.env.local` file in the root directory:
+   Create a `.env.local` file:
    ```bash
-   # OpenAI API Key for AI-powered summary and question generation
-   OPENAI_API_KEY=your_openai_api_key_here
-   
-   # Clerk Authentication
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
-   CLERK_SECRET_KEY=your_clerk_secret_key_here
-   
-   # Supabase Database
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-   
-   # Stripe Payments (Optional)
-   STRIPE_SECRET_KEY=your_stripe_secret_key_here
-   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key_here
+   # Authentication
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
+   CLERK_SECRET_KEY=your_clerk_secret
+
+   # Database
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_key
+
+   # AI Services
+   OPENAI_API_KEY=your_openai_key
+   GOOGLE_CLOUD_API_KEY=your_google_cloud_api_key
+
+   # Payments
+   STRIPE_SECRET_KEY=your_stripe_key
+   STRIPE_WEBHOOK_SECRET=your_webhook_secret
    ```
 
 4. **Run the development server**
@@ -91,148 +90,88 @@ StudyHelper is a Next.js web application that helps students and professionals s
    npm run dev
    ```
 
-5. **Open the application**
-   Navigate to [http://localhost:3000](http://localhost:3000) in your browser
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-## Usage
+## 🛠️ Tech Stack
 
-1. **Sign up/Login**: Create an account or sign in
-2. **Upload a Document**: Drag and drop or select a PDF or image file (max 15MB)
-3. **Text Extraction**: The app will automatically extract text from your document
-4. **AI Generation**: AI will generate a summary and study questions based on the extracted text
-5. **Edit & Export**: Review and edit the generated content, then export it as needed
-6. **Save Documents**: Documents are saved to your account for future reference
+### Frontend
+- **Next.js 14**: React framework with App Router
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first CSS framework
+- **Lucide React**: Beautiful icons
 
-## Project Structure
+### Backend
+- **Next.js API Routes**: Server-side API endpoints
+- **Supabase**: Database and authentication
+- **Clerk**: User authentication and management
+- **OpenAI API**: AI-powered text generation
+- **Google Cloud Vision API**: OCR for images
 
-```
-resumeAPP/
-├── app/
-│   ├── globals.css          # Global styles with Tailwind CSS
-│   ├── layout.tsx           # Root layout component
-│   ├── page.tsx             # Main application page
-│   └── api/
-│       ├── extract-text/    # API route for text extraction
-│       ├── generate-ai-content/ # API route for AI generation
-│       ├── user-usage/      # API route for usage tracking
-│       └── webhooks/        # Stripe webhook handlers
-├── components/
-│   ├── FileUpload.tsx       # File upload component with drag-and-drop
-│   ├── TextExtraction.tsx   # Text extraction display component
-│   ├── AIGeneration.tsx     # AI content generation component
-│   └── PricingModal.tsx     # Payment/pricing modal
-├── lib/
-│   ├── database.ts          # Database operations
-│   ├── stripe.ts            # Stripe configuration
-│   └── supabase.ts          # Supabase client
-├── package.json             # Project dependencies
-├── next.config.js           # Next.js configuration
-├── tailwind.config.js       # Tailwind CSS configuration
-└── tsconfig.json            # TypeScript configuration
-```
+### Payments & Infrastructure
+- **Stripe**: Payment processing and subscriptions
+- **Vercel**: Deployment and hosting
+- **PostgreSQL**: Database (via Supabase)
 
-## API Routes
+## 📱 Usage
 
-### `/api/extract-text`
-- **Method**: POST
-- **Input**: FormData with file
-- **Output**: JSON with extracted text
-- **Supports**: PDF files and image files (JPG, PNG)
+### For Anonymous Users
+1. Upload a PDF or image
+2. Get one free AI-generated summary and questions
+3. Export results as TXT or PDF
+4. Create an account for more features
 
-### `/api/generate-ai-content`
-- **Method**: POST
-- **Input**: JSON with text content
-- **Output**: JSON with summary and questions array
-- **Requires**: OpenAI API key
+### For Registered Users
+1. Sign up for a free account
+2. Get 3 free uses per month
+3. Save documents to your history
+4. Upgrade to premium for unlimited usage
 
-### `/api/user-usage`
-- **Method**: GET
-- **Output**: JSON with user usage information
-- **Requires**: Authentication
+### Document Processing
+1. **Upload**: Drag and drop or click to upload
+2. **Process**: AI analyzes your document
+3. **Review**: Edit generated summary and questions
+4. **Save**: Store for future reference
+5. **Export**: Download in your preferred format
 
-## Environment Variables
+## 🔧 API Endpoints
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `OPENAI_API_KEY` | OpenAI API key for AI features | Yes |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | Yes |
-| `CLERK_SECRET_KEY` | Clerk secret key | Yes |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
-| `STRIPE_SECRET_KEY` | Stripe secret key | Optional |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key | Optional |
+### Document Processing
+- `POST /api/extract-text` - Extract text from PDFs
+- `POST /api/extract-text-ocr` - OCR processing for images
+- `POST /api/generate-ai-content` - Generate summaries and questions
 
-## Development
+### User Management
+- `GET /api/user-usage` - Get user usage statistics
+- `POST /api/update-usage-after-payment` - Update usage after payment
 
-- **Start development server**: `npm run dev`
-- **Build for production**: `npm run build`
-- **Start production server**: `npm start`
-- **Run linter**: `npm run lint`
+### Payments
+- `POST /api/create-payment-intent` - Create Stripe payment intent
+- `POST /api/create-subscription` - Create subscription
+- `POST /api/cancel-subscription` - Cancel subscription
+- `POST /api/create-customer-portal` - Access customer portal
 
-## Deployment
 
-1. **Build the application**
-   ```bash
-   npm run build
-   ```
+## 🔒 Security Features
 
-2. **Deploy to Vercel** (recommended)
-   - Connect your GitHub repository
-   - Set environment variables in Vercel dashboard
-   - Deploy automatically on push
+- **Secure Authentication**: Clerk-powered user management
+- **API Key Protection**: Environment variable security
+- **Database Security**: Supabase Row Level Security
+- **Payment Security**: Stripe PCI compliance
+- **File Validation**: Upload size and type restrictions
 
-3. **Set environment variables** in your deployment platform
+## 🌍 Internationalization
 
-## Troubleshooting
+- **Portuguese (pt)**: Primary language
+- **English (en)**: Secondary language
+- **Dynamic Language Switching**: Real-time language changes
 
-### Common Issues
+## 📊 Performance
 
-1. **OCR not working with images**
-   - Try converting image to PDF first
-   - Use higher resolution images
-   - Ensure good contrast (black text on white background)
+- **Optimized Loading**: Efficient file processing
+- **Caching**: Intelligent result caching
+- **Error Handling**: Graceful error management
+- **Responsive Design**: Mobile-first approach
 
-2. **AI generation not working**
-   - Check OpenAI API key is set correctly
-   - Verify API key has sufficient credits
-   - Check Vercel function logs for errors
 
-3. **Database connection issues**
-   - Verify Supabase URL and keys are correct
-   - Check Supabase project is active
-   - Ensure database tables are created
-
-4. **Authentication issues**
-   - Check Clerk keys are set correctly
-   - Verify Clerk project configuration
-   - Check redirect URLs in Clerk dashboard
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## Support
-
-For issues and questions, please open an issue in the GitHub repository.
-
-## Recent Updates
-
-- ✅ **Fixed AI generation 404 errors** - AI now works perfectly with PDFs
-- ✅ **Improved OCR performance** - Better error handling and timeouts
-- ✅ **Enhanced user feedback** - Better error messages and progress indicators
-- ✅ **Optimized for serverless** - Improved Vercel deployment compatibility
-
-## Roadmap
-
-- [ ] Enhanced OCR with multiple engines
-- [ ] Batch processing for multiple files
-- [ ] Advanced export formats (Word, PowerPoint)
-- [ ] Team collaboration features
-- [ ] Mobile app version 
+**Made with ❤️ for students and educators worldwide** 
