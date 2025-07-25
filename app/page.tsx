@@ -1355,28 +1355,41 @@ export default function Home() {
                   >
                     Start Over
                   </button>
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={saveCurrentDocument}
-                      className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors text-sm"
-                    >
-                      <Save size={16} />
-                      {t.saveDocument}
-                    </button>
-                    <button 
-                      onClick={exportAsText}
-                      disabled={isExporting}
-                      className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
-                    >
-                      {isExporting ? t.exportingTxt : t.exportAsTxt}
-                    </button>
-                    <button 
-                      onClick={exportAsPDF}
-                      disabled={isExporting}
-                      className="px-6 py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 text-sm"
-                    >
-                      {isExporting ? t.exportingPdf : t.exportAsPdf}
-                    </button>
+                  <div className="flex flex-col items-end gap-2">
+                    {!isSignedIn && (
+                      <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                        💡 Crie uma conta para salvar documentos
+                      </div>
+                    )}
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={saveCurrentDocument}
+                        disabled={!isSignedIn}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors text-sm ${
+                          isSignedIn 
+                            ? 'bg-green-500 text-white hover:bg-green-600' 
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                        title={!isSignedIn ? 'Crie uma conta para salvar documentos' : ''}
+                      >
+                        <Save size={16} />
+                        {t.saveDocument}
+                      </button>
+                      <button 
+                        onClick={exportAsText}
+                        disabled={isExporting}
+                        className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
+                      >
+                        {isExporting ? t.exportingTxt : t.exportAsTxt}
+                      </button>
+                      <button 
+                        onClick={exportAsPDF}
+                        disabled={isExporting}
+                        className="px-6 py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 text-sm"
+                      >
+                        {isExporting ? t.exportingPdf : t.exportAsPdf}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
