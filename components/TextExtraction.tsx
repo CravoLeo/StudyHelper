@@ -111,8 +111,13 @@ export default function TextExtraction({ file, onTextExtracted, language = 'pt',
         const formData = new FormData()
         formData.append('file', file)
     
+        // Choose API endpoint based on file type
+        const isImage = file.type.startsWith('image/')
+        const apiEndpoint = isImage ? '/api/extract-text-ocr' : '/api/extract-text'
+        
+        console.log(`🔍 [${componentId.current}] Using API endpoint: ${apiEndpoint}`)
 
-        const response = await fetch('/api/extract-text', {
+        const response = await fetch(apiEndpoint, {
           method: 'POST',
           body: formData
         })
@@ -141,8 +146,15 @@ export default function TextExtraction({ file, onTextExtracted, language = 'pt',
         const data = await response.json()
         console.log(`✅ [${componentId.current}] Extraction successful:`, {
           textLength: data.text?.length || 0,
-          preview: data.text?.substring(0, 100) + '...'
+          preview: data.text?.substring(0, 100) + '...',
+          confidence: data.confidence,
+          fileType: data.fileType
         })
+
+        // Show confidence score for OCR results
+        if (data.confidence && data.confidence < 0.7) {
+          console.warn(`⚠️ [${componentId.current}] Low OCR confidence: ${data.confidence}`)
+        }
 
         setExtractedText(data.text || '')
         onTextExtracted(data.text || '')
@@ -153,7 +165,22 @@ export default function TextExtraction({ file, onTextExtracted, language = 'pt',
         console.log(`🔄 [${componentId.current}] Usage refresh event dispatched after text extraction`)
       } catch (err) {
         console.error(`❌ [${componentId.current}] Text extraction failed:`, err)
-        setError(err instanceof Error ? err.message : 'Failed to extract text')
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to extract text'
+        if (err instanceof Error) {
+          if (err.message.includes('OCR service not configured')) {
+            errorMessage = 'OCR service is not configured. Please contact support.'
+          } else if (err.message.includes('No text found')) {
+            errorMessage = 'No text found in image. Please try a clearer image with visible text.'
+          } else if (err.message.includes('quota exceeded')) {
+            errorMessage = 'OCR quota exceeded. Please try again later.'
+          } else {
+            errorMessage = err.message
+          }
+        }
+        
+        setError(errorMessage)
       } finally {
         setIsLoading(false)
       }
@@ -175,10 +202,10 @@ export default function TextExtraction({ file, onTextExtracted, language = 'pt',
           
           <div className="text-center">
             <h3 className="text-3xl font-bold text-white mb-2">
-              {t.extractingText}
+              {file.type === 'application/pdf' ? t.readingPdf : t.runningOcr}
             </h3>
             <p className="text-gray-400 text-lg">
-              {file.type === 'application/pdf' ? t.readingPdf : t.runningOcr}
+              {file.type.startsWith('image/') ? t.ocrProcessing : t.readingPdf}
             </p>
             {file.type.startsWith('image/') && (
               <p className="text-gray-500 text-sm mt-2">
