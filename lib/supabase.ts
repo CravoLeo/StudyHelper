@@ -38,7 +38,7 @@ export interface SavedDocument {
   file_name: string
   summary: string
   questions: string[]
-
+  content_hash?: string // Hash of the document content for duplicate detection
   created_at: string
   updated_at: string
 }

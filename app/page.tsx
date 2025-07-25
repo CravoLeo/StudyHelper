@@ -10,8 +10,9 @@ import NextStepsModal from '@/components/NextStepsModal'
 import MaintenanceMode from '@/components/MaintenanceMode'
 import { FileText, Upload, BookOpen, Sparkles, Download, Save, History, Trash2, Calendar, Eye, User, AlertCircle, CheckCircle, XCircle, CreditCard, Zap, Rocket, Globe, Menu, X } from 'lucide-react'
 import { SavedDocument, isLocalMode } from '@/lib/supabase'
-import { saveDocument, getDocuments, deleteDocument, UserUsage } from '@/lib/database'
+import { saveDocument, getDocuments, deleteDocument, checkForDuplicateDocument, UserUsage } from '@/lib/database'
 import { checkFreeTrialStatus, markFreeTrialUsed, clearFreeTrialFlag, canUseFreeTrial } from '@/lib/free-trial'
+import DuplicateWarningModal from '@/components/DuplicateWarningModal'
 
 // Language translations
 const translations = {
@@ -36,7 +37,7 @@ const translations = {
     heroTitle: 'Transforme Documentos em',
     heroSubtitle: 'Materiais de Estudo',
     heroTagline: '100% Automático e Seguro',
-    heroDescription: 'Carregue PDFs e obtenha resumos e questões de estudo com IA em segundos. Nenhum trabalho manual necessário.',
+    heroDescription: 'Carregue PDFs e imagens e obtenha resumos e questões de estudo com IA em segundos. Nenhum trabalho manual necessário.',
     
     // Mode toggle
     openaiMode: '🚀 MODO OPENAI',
@@ -59,7 +60,7 @@ const translations = {
     aiPoweredDesc: 'IA avançada analisa seus documentos e cria resumos abrangentes e questões de estudo',
     
     multipleFormatsTitle: 'Múltiplos Formatos',
-    multipleFormatsDesc: 'Funciona em PDFs. Carregue e obtenha resultados instantaneamente',
+    multipleFormatsDesc: 'Funciona com PDFs e imagens. Carregue e obtenha resultados instantaneamente',
     
     exportReadyTitle: 'Pronto para Exportar',
     exportReadyDesc: 'Exporte seus materiais de estudo como arquivos de texto ou PDFs. Perfeito para compartilhar e imprimir',
@@ -103,12 +104,12 @@ const translations = {
     nextSteps_title: 'O que vem a seguir?',
     nextSteps_subtitle: 'Novos recursos incríveis chegando ao StudyHelper',
     nextSteps_imageOCR_title: 'Reconhecimento de Imagens',
-    nextSteps_imageOCR_desc: 'Processar imagens e documentos escaneados',
+    nextSteps_imageOCR_desc: 'Processar imagens e documentos escaneados com OCR avançado',
     nextSteps_inDevelopment: 'Em desenvolvimento',
     nextSteps_imageOCR_feat1: 'Extrair texto de fotos',
-    nextSteps_imageOCR_feat2: 'Suporte a JPG, PNG',
+    nextSteps_imageOCR_feat2: 'Suporte a JPG, PNG, GIF, WebP',
     nextSteps_imageOCR_feat3: 'Reconhecimento de alta precisão',
-    nextSteps_imageOCR_feat4: 'Processamento em lote de imagens',
+    nextSteps_imageOCR_feat4: 'Processamento via Google Cloud Vision',
     nextSteps_batch_title: 'Processamento em Lote',
     nextSteps_batch_desc: 'Carregue múltiplos documentos de uma vez',
     nextSteps_batch_feat1: 'Processar até 10 arquivos por vez',
@@ -135,6 +136,15 @@ const translations = {
     freeTrialSignupPrompt: 'Crie uma conta para continuar usando nossos recursos de IA!',
     freeTrialSignupButton: 'Criar Conta',
     freeTrialBenefits: 'Obtenha 3 usos gratuitos e desbloqueie todos os recursos',
+    
+    // Duplicate warning modal
+    duplicateWarning_title: 'Documento Já Existe',
+    duplicateWarning_subtitle: 'Detectamos um documento similar',
+    duplicateWarning_message: 'Este documento parece ser similar a um que você já salvou. O que você gostaria de fazer?',
+    duplicateWarning_existing: 'Documento Existente:',
+    duplicateWarning_new: 'Novo Documento:',
+    duplicateWarning_cancel: 'Cancelar',
+    duplicateWarning_replace: 'Substituir'
   },
   en: {
     // Navigation
@@ -157,7 +167,7 @@ const translations = {
     heroTitle: 'Turn Documents into',
     heroSubtitle: 'Study Materials',
     heroTagline: '100% Automatic & Secure',
-    heroDescription: 'Upload PDFs and get AI-powered summaries and study questions in seconds. No manual work required.',
+    heroDescription: 'Upload PDFs and images and get AI-powered summaries and study questions in seconds. No manual work required.',
     
     // Mode toggle
     openaiMode: '🚀 OPENAI MODE',
@@ -180,7 +190,7 @@ const translations = {
     aiPoweredDesc: 'Advanced AI analyzes your documents and creates comprehensive summaries and study questions',
     
     multipleFormatsTitle: 'Multiple Formats',
-    multipleFormatsDesc: 'Works with PDFs. Upload and get results instantly',
+    multipleFormatsDesc: 'Works with PDFs and images. Upload and get results instantly',
     
     exportReadyTitle: 'Export Ready',
     exportReadyDesc: 'Export your study materials as text files or PDFs. Perfect for sharing and printing',
@@ -223,13 +233,13 @@ const translations = {
     // Next Steps Modal
     nextSteps_title: "What's Next?",
     nextSteps_subtitle: "Exciting features coming to your study helper",
-    nextSteps_imageOCR_title: "Image OCR",
-    nextSteps_imageOCR_desc: "Process images and scanned documents",
+    nextSteps_imageOCR_title: "Image Recognition",
+    nextSteps_imageOCR_desc: "Process images and scanned documents with advanced OCR",
     nextSteps_inDevelopment: "In Development",
-    nextSteps_imageOCR_feat1: "Scan text from photos",
-    nextSteps_imageOCR_feat2: "Support for JPG, PNG formats",
-    nextSteps_imageOCR_feat3: "High accuracy OCR processing",
-    nextSteps_imageOCR_feat4: "Batch image processing",
+    nextSteps_imageOCR_feat1: "Extract text from photos",
+    nextSteps_imageOCR_feat2: "Support for JPG, PNG, GIF, WebP",
+    nextSteps_imageOCR_feat3: "High accuracy recognition",
+    nextSteps_imageOCR_feat4: "Processing via Google Cloud Vision",
     nextSteps_batch_title: "Batch Processing",
     nextSteps_batch_desc: "Upload multiple documents at once",
     nextSteps_batch_feat1: "Process up to 10 files at once",
@@ -256,6 +266,15 @@ const translations = {
     freeTrialSignupPrompt: "Create an account to continue using our AI features!",
     freeTrialSignupButton: "Create Account",
     freeTrialBenefits: "Get 3 free uses and unlock all features",
+    
+    // Duplicate warning modal
+    duplicateWarning_title: 'Document Already Exists',
+    duplicateWarning_subtitle: 'We detected a similar document',
+    duplicateWarning_message: 'This document appears to be similar to one you\'ve already saved. What would you like to do?',
+    duplicateWarning_existing: 'Existing Document:',
+    duplicateWarning_new: 'New Document:',
+    duplicateWarning_cancel: 'Cancel',
+    duplicateWarning_replace: 'Replace'
   }
 }
 
@@ -292,6 +311,10 @@ export default function Home() {
   // Free trial state
   const [freeTrialUsed, setFreeTrialUsed] = useState(false)
   const [showFreeTrialModal, setShowFreeTrialModal] = useState(false)
+  
+  // Duplicate detection state
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
+  const [duplicateDocument, setDuplicateDocument] = useState<SavedDocument | null>(null)
   
   // Language state
   const [language, setLanguage] = useState<'pt' | 'en'>('pt') // Default to Portuguese
@@ -594,27 +617,13 @@ export default function Home() {
     handlePaymentSuccess()
   }, [isSignedIn, loadUserUsage])
 
-  // Save current document to Supabase
-  const saveCurrentDocument = useCallback(async () => {
-    console.log('💾 Save button clicked')
-    console.log('🔍 Checking save conditions:', {
-      hasFile: !!uploadedFile,
-      hasSummary: !!summary && summary.trim().length > 0,
-      hasQuestions: questions.length > 0,
-      userId: user?.id
-    })
-
-    if (!uploadedFile || !summary || questions.length === 0) {
-      console.log('❌ Save conditions not met')
-      return
-    }
-
+  // Perform the actual save operation
+  const performSave = useCallback(async () => {
     try {
       const documentData = {
-        file_name: uploadedFile.name,
+        file_name: uploadedFile!.name,
         summary,
         questions,
-        demo_mode: false,
         user_id: user?.id // Use Clerk user ID
       }
 
@@ -636,6 +645,94 @@ export default function Home() {
       console.error('❌ Error saving document:', error)
     }
   }, [uploadedFile, summary, questions, user?.id])
+
+  // Save current document to Supabase
+  const saveCurrentDocument = useCallback(async () => {
+    console.log('💾 Save button clicked')
+    console.log('🔍 Current state:', {
+      uploadedFile: uploadedFile?.name,
+      summaryLength: summary?.length,
+      questionsCount: questions?.length,
+      isSignedIn,
+      userId: user?.id,
+      currentStep
+    })
+    console.log('🔍 Checking save conditions:', {
+      hasFile: !!uploadedFile,
+      hasSummary: !!summary && summary.trim().length > 0,
+      hasQuestions: questions.length > 0,
+      userId: user?.id
+    })
+
+    if (!uploadedFile || !summary || questions.length === 0) {
+      console.log('❌ Save conditions not met')
+      console.log('❌ Missing:', {
+        file: !uploadedFile,
+        summary: !summary,
+        questions: questions.length === 0
+      })
+      return
+    }
+
+    if (!isSignedIn) {
+      console.log('❌ User not signed in')
+      return
+    }
+
+    try {
+      // Check for duplicate documents first
+      console.log('🔍 Checking for duplicate documents...')
+      const duplicate = await checkForDuplicateDocument(summary, questions, user?.id)
+      
+      if (duplicate) {
+        console.log('⚠️  Duplicate document found:', duplicate)
+        setDuplicateDocument(duplicate)
+        setShowDuplicateWarning(true)
+        return
+      }
+
+      // No duplicate found, proceed with normal save
+      console.log('✅ No duplicates found, proceeding with save...')
+      await performSave()
+    } catch (error) {
+      console.error('❌ Error in save process:', error)
+    }
+  }, [uploadedFile, summary, questions, user?.id, performSave, isSignedIn, currentStep])
+
+  // Handle duplicate replacement
+  const handleReplaceDuplicate = useCallback(async () => {
+    if (!duplicateDocument || !uploadedFile) return
+
+    try {
+      // Delete the existing document
+      const deleteSuccess = await deleteDocument(duplicateDocument.id)
+      if (!deleteSuccess) {
+        console.error('❌ Failed to delete duplicate document')
+        return
+      }
+
+      // Remove from local state
+      setSavedDocuments(prev => prev.filter(doc => doc.id !== duplicateDocument.id))
+
+      // Save the new document
+      await performSave()
+
+      // Close the modal
+      setShowDuplicateWarning(false)
+      setDuplicateDocument(null)
+
+      console.log('✅ Duplicate document replaced successfully')
+    } catch (error) {
+      console.error('❌ Error replacing duplicate document:', error)
+    }
+  }, [duplicateDocument, uploadedFile, performSave])
+
+  // Handle duplicate cancellation
+  const handleCancelDuplicate = useCallback(() => {
+    setShowDuplicateWarning(false)
+    setDuplicateDocument(null)
+    console.log('❌ Duplicate save cancelled by user')
+  }, [])
 
   // Load a saved document
   const loadSavedDocument = useCallback((doc: SavedDocument) => {
@@ -1547,8 +1644,21 @@ export default function Home() {
       <NextStepsModal 
         isOpen={showNextStepsModal}
         onClose={() => setShowNextStepsModal(false)}
-                  t={t}
+        t={t}
+      />
+      
+      {/* Duplicate Warning Modal */}
+      {duplicateDocument && (
+        <DuplicateWarningModal
+          isOpen={showDuplicateWarning}
+          onClose={() => setShowDuplicateWarning(false)}
+          onReplace={handleReplaceDuplicate}
+          onCancel={handleCancelDuplicate}
+          existingDocument={duplicateDocument}
+          newFileName={uploadedFile?.name || ''}
+          t={t}
         />
-      </div>
+      )}
+    </div>
   )
 } 

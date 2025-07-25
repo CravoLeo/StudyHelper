@@ -1,5 +1,78 @@
 import { supabase, SavedDocument, isLocalMode } from './supabase'
 
+// Generate a simple hash for content duplicate detection
+function generateContentHash(summary: string, questions: string[]): string {
+  const content = `${summary.trim()}-${questions.join('|').trim()}`
+  // Simple hash function - in production you might want to use a more robust hashing library
+  let hash = 0
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(36)
+}
+
+// Check for duplicate documents based on content hash
+export async function checkForDuplicateDocument(
+  summary: string, 
+  questions: string[], 
+  userId?: string
+): Promise<SavedDocument | null> {
+  const contentHash = generateContentHash(summary, questions)
+  console.log('🔍 Checking for duplicate with hash:', contentHash)
+  console.log('🔍 User ID:', userId)
+  
+  // If in local mode, check localStorage
+  if (isLocalMode) {
+    console.log('🔍 Checking localStorage for duplicates...')
+    const saved = localStorage.getItem('studyhelper-documents')
+    if (saved) {
+      try {
+        const documents = JSON.parse(saved)
+        const duplicate = documents.find((doc: SavedDocument) => 
+          doc.content_hash === contentHash && 
+          (!userId || doc.user_id === userId)
+        )
+        console.log('🔍 Duplicate found in localStorage:', duplicate ? 'YES' : 'NO')
+        return duplicate || null
+      } catch (error) {
+        console.error('Error checking for duplicates in localStorage:', error)
+        return null
+      }
+    }
+    return null
+  }
+
+  // Use Supabase for cloud storage
+  try {
+    console.log('🔍 Checking Supabase for duplicates...')
+    let query = supabase
+      .from('documents')
+      .select('*')
+      .eq('content_hash', contentHash)
+
+    if (userId) {
+      query = query.eq('user_id', userId)
+    } else {
+      query = query.is('user_id', null)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error('Error checking for duplicates:', error)
+      return null
+    }
+
+    console.log('🔍 Duplicate found in Supabase:', data && data.length > 0 ? 'YES' : 'NO')
+    return data && data.length > 0 ? data[0] : null
+  } catch (error) {
+    console.error('Error checking for duplicates:', error)
+    return null
+  }
+}
+
 // User usage tracking types
 export interface UserUsage {
   id: string
@@ -52,12 +125,16 @@ export async function saveDocument(document: Omit<SavedDocument, 'id' | 'created
   console.log('🔍 saveDocument called with:', document)
   console.log('🔍 isLocalMode:', isLocalMode)
   
+  // Generate content hash for duplicate detection
+  const contentHash = generateContentHash(document.summary, document.questions)
+  
   // If in local mode, use localStorage
   if (isLocalMode) {
     console.warn('⚠️  Saving to localStorage (local mode)')
     const id = Date.now().toString()
     const savedDoc: SavedDocument = {
       ...document,
+      content_hash: contentHash,
       id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -81,7 +158,7 @@ export async function saveDocument(document: Omit<SavedDocument, 'id' | 'created
         file_name: document.file_name,
         summary: document.summary,
         questions: document.questions,
-    
+        content_hash: contentHash,
         user_id: document.user_id || null
       })
       .select()

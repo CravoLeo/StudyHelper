@@ -1,7 +1,7 @@
 'use client'
 
 
-import { X, ImageIcon, FileStack, Brain, Target } from 'lucide-react'
+import { X, FileStack, Brain, Target } from 'lucide-react'
 
 interface NextStepsModalProps {
   isOpen: boolean
@@ -24,25 +24,12 @@ export default function NextStepsModal({ isOpen, onClose, t }: NextStepsModalPro
 
   const upcomingFeatures: Feature[] = [
     {
-      id: 'image-ocr',
-      title: t.nextSteps_imageOCR_title,
-      description: t.nextSteps_imageOCR_desc,
-      icon: ImageIcon,
-      color: 'blue',
-      status: t.nextSteps_inDevelopment,
-      features: [
-        t.nextSteps_imageOCR_feat1,
-        t.nextSteps_imageOCR_feat2,
-        t.nextSteps_imageOCR_feat3,
-        t.nextSteps_imageOCR_feat4
-      ]
-    },
-    {
       id: 'batch-processing',
       title: t.nextSteps_batch_title,
       description: t.nextSteps_batch_desc,
       icon: FileStack,
       color: 'green',
+      status: t.nextSteps_inDevelopment,
       features: [
         t.nextSteps_batch_feat1,
         t.nextSteps_batch_feat2,
@@ -108,6 +95,13 @@ export default function NextStepsModal({ isOpen, onClose, t }: NextStepsModalPro
     return colorMap[color as keyof typeof colorMap] || colorMap.blue
   }
 
+  const getStatusColor = (status: string) => {
+    if (status === '✅ Available Now') {
+      return 'bg-green-500/20 text-green-400'
+    }
+    return 'bg-blue-500/20 text-blue-400'
+  }
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
@@ -135,7 +129,7 @@ export default function NextStepsModal({ isOpen, onClose, t }: NextStepsModalPro
                 className={`bg-gray-800/50 rounded-xl p-6 border ${colors.border} relative`}
               >
                 {feature.status && (
-                  <div className={`absolute -top-3 left-6 ${colors.bg} px-3 py-1 rounded-full`}>
+                  <div className={`absolute -top-3 left-6 ${getStatusColor(feature.status)} px-3 py-1 rounded-full`}>
                     <span className={`text-xs font-medium ${colors.text}`}>
                       {feature.status}
                     </span>

@@ -55,7 +55,7 @@ export default function TermsOfService() {
                 <li>Criação de questionários baseados em conteúdo</li>
                 <li>Processamento de texto usando IA</li>
                 <li>Armazenamento seguro de documentos e resultados</li>
-                <li>Extração de texto de arquivos PDF</li>
+                <li>Extração de texto de arquivos PDF e imagens</li>
                 <li>Suporte a múltiplos idiomas</li>
               </ul>
             </section>
@@ -138,7 +138,7 @@ export default function TermsOfService() {
                   <h3 className="text-lg font-medium text-gray-800 mb-2">Limites de Arquivo</h3>
                   <ul className="list-disc list-inside text-gray-700 space-y-1">
                     <li>Tamanho máximo: 4.5MB por arquivo</li>
-                    <li>Formatos suportados: PDF (recomendado), imagens JPG/PNG</li>
+                    <li>Formatos suportados: PDF (recomendado), imagens JPG, PNG, GIF, WebP</li>
                     <li>Arquivos devem conter texto legível (não apenas imagens escaneadas)</li>
                   </ul>
                 </div>

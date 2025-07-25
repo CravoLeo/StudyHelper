@@ -24,12 +24,12 @@ const translations = {
     nextSteps_title: 'O que vem a seguir?',
     nextSteps_subtitle: 'Novos recursos incríveis chegando ao StudyHelper',
     nextSteps_imageOCR_title: 'Reconhecimento de Imagens',
-    nextSteps_imageOCR_desc: 'Processar imagens e documentos escaneados',
+    nextSteps_imageOCR_desc: 'Processar imagens e documentos escaneados com OCR avançado',
     nextSteps_inDevelopment: 'Em desenvolvimento',
     nextSteps_imageOCR_feat1: 'Extrair texto de fotos',
-    nextSteps_imageOCR_feat2: 'Suporte a JPG, PNG',
+    nextSteps_imageOCR_feat2: 'Suporte a JPG, PNG, GIF, WebP',
     nextSteps_imageOCR_feat3: 'Reconhecimento de alta precisão',
-    nextSteps_imageOCR_feat4: 'Processamento em lote de imagens',
+    nextSteps_imageOCR_feat4: 'Processamento via Google Cloud Vision',
     nextSteps_batch_title: 'Processamento em Lote',
     nextSteps_batch_desc: 'Carregue múltiplos documentos de uma vez',
     nextSteps_batch_feat1: 'Processar até 10 arquivos por vez',
@@ -50,6 +50,20 @@ const translations = {
     nextSteps_smart_feat4: 'Lembretes de estudo',
     nextSteps_footer1: '🚀 Estamos trabalhando para trazer esses recursos',
     nextSteps_footer2: '✨ Fique ligado para novidades incríveis!',
+    // Free trial messages
+    freeTrialUsed: 'Você já usou sua avaliação gratuita',
+    freeTrialSignupPrompt: 'Crie uma conta para continuar usando nossos recursos de IA!',
+    freeTrialSignupButton: 'Criar Conta',
+    freeTrialBenefits: 'Obtenha 3 usos gratuitos e desbloqueie todos os recursos',
+    
+    // Duplicate warning modal
+    duplicateWarning_title: 'Documento Já Existe',
+    duplicateWarning_subtitle: 'Detectamos um documento similar',
+    duplicateWarning_message: 'Este documento parece ser similar a um que você já salvou. O que você gostaria de fazer?',
+    duplicateWarning_existing: 'Documento Existente:',
+    duplicateWarning_new: 'Novo Documento:',
+    duplicateWarning_cancel: 'Cancelar',
+    duplicateWarning_replace: 'Substituir'
   },
   en: {
     features: 'Features',
@@ -65,13 +79,13 @@ const translations = {
     // ... (copy all other keys from app/page.tsx, including Next Steps Modal keys)
     nextSteps_title: "What's Next?",
     nextSteps_subtitle: "Exciting features coming to your study helper",
-    nextSteps_imageOCR_title: "Image OCR",
-    nextSteps_imageOCR_desc: "Process images and scanned documents",
+    nextSteps_imageOCR_title: "Image Recognition",
+    nextSteps_imageOCR_desc: "Process images and scanned documents with advanced OCR",
     nextSteps_inDevelopment: "In Development",
-    nextSteps_imageOCR_feat1: "Scan text from photos",
-    nextSteps_imageOCR_feat2: "Support for JPG, PNG formats",
-    nextSteps_imageOCR_feat3: "High accuracy OCR processing",
-    nextSteps_imageOCR_feat4: "Batch image processing",
+    nextSteps_imageOCR_feat1: "Extract text from photos",
+    nextSteps_imageOCR_feat2: "Support for JPG, PNG, GIF, WebP",
+    nextSteps_imageOCR_feat3: "High accuracy recognition",
+    nextSteps_imageOCR_feat4: "Processing via Google Cloud Vision",
     nextSteps_batch_title: "Batch Processing",
     nextSteps_batch_desc: "Upload multiple documents at once",
     nextSteps_batch_feat1: "Process up to 10 files at once",
@@ -92,6 +106,20 @@ const translations = {
     nextSteps_smart_feat4: "Study reminders",
     nextSteps_footer1: "🚀 We're working hard to bring you these features",
     nextSteps_footer2: "✨ Stay tuned for exciting updates!",
+    // Free trial messages
+    freeTrialUsed: "You've used your free trial",
+    freeTrialSignupPrompt: "Create an account to continue using our AI features!",
+    freeTrialSignupButton: "Create Account",
+    freeTrialBenefits: "Get 3 free uses and unlock all features",
+    
+    // Duplicate warning modal
+    duplicateWarning_title: 'Document Already Exists',
+    duplicateWarning_subtitle: 'We detected a similar document',
+    duplicateWarning_message: 'This document appears to be similar to one you\'ve already saved. What would you like to do?',
+    duplicateWarning_existing: 'Existing Document:',
+    duplicateWarning_new: 'New Document:',
+    duplicateWarning_cancel: 'Cancel',
+    duplicateWarning_replace: 'Replace'
   }
 }
 
@@ -298,7 +326,7 @@ export default function Dashboard() {
               <h3 className="font-bold mb-2 text-blue-400">Usage Tips</h3>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li>• Upload clear, high-quality documents</li>
-                <li>• Use PDF format for best results</li>
+                <li>• Use PDF format or clear images for best results</li>
                 <li>• Check your usage regularly</li>
                 <li>• Upgrade for unlimited access</li>
               </ul>
