@@ -166,12 +166,6 @@ you can access it on https://studyhelper.app/
 - **English (en)**: Secondary language
 - **Dynamic Language Switching**: Real-time language changes
 
-## 📊 Performance
-
-- **Optimized Loading**: Efficient file processing
-- **Caching**: Intelligent result caching
-- **Error Handling**: Graceful error management
-- **Responsive Design**: Mobile-first approach
 
 
 **Made with ❤️ for students and educators worldwide** 
