@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
 
     // Get user usage to find stripe_customer_id
     const userUsage = await getUserUsage(userId)
-    
     console.log('🔍 User usage:', userUsage)
     
     let customerId = userUsage?.stripe_customer_id
